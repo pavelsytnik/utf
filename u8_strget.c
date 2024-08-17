@@ -1,42 +1,30 @@
 #include "utf.h"
 
-#define CHAR_PTR_TO_UTF8 (utf8_t) (unsigned char)
+static int u8_seqlen(char c)
+{
+    if ((c & 0x80) == 0x00)
+        return 1;
+    else if ((c & 0xE0) == 0xC0)
+        return 2;
+    else if ((c & 0xF0) == 0xE0)
+        return 3;
+    else if ((c & 0xF8) == 0xF0)
+        return 4;
+    else
+        return 0;
+}
 
 // Also unsafe code
 utf32_t u8_strget(const char *s, size_t i)
 {
-    size_t shift = 0;
-    utf8_t ch;
+    utf8_t ch = 0;
 
-    while (i-- > 0) {
-        if ((s[shift] & 0x80) == 0x00) {
-            shift += 1;
-        } else if ((s[shift] & 0xE0) == 0xC0) {
-            shift += 2;
-        } else if ((s[shift] & 0xF0) == 0xE0) {
-            shift += 3;
-        } else if ((s[shift] & 0xF8) == 0xF0) {
-            shift += 4;
-        }
-    }
+    while (i-- > 0)
+        s += u8_seqlen(*s);
 
-    if ((s[shift] & 0x80) == 0x00) {
-        ch = CHAR_PTR_TO_UTF8 s[shift];
-    } else if ((s[shift] & 0xE0) == 0xC0) {
-        ch = CHAR_PTR_TO_UTF8 s[shift + 0] << 8 |
-             CHAR_PTR_TO_UTF8 s[shift + 1];
-    } else if ((s[shift] & 0xF0) == 0xE0) {
-        ch = CHAR_PTR_TO_UTF8 s[shift + 0] << 16 |
-             CHAR_PTR_TO_UTF8 s[shift + 1] << 8  |
-             CHAR_PTR_TO_UTF8 s[shift + 2];
-    } else if ((s[shift] & 0xF8) == 0xF0) {
-        ch = CHAR_PTR_TO_UTF8 s[shift + 0] << 24 |
-             CHAR_PTR_TO_UTF8 s[shift + 1] << 16 |
-             CHAR_PTR_TO_UTF8 s[shift + 2] << 8  |
-             CHAR_PTR_TO_UTF8 s[shift + 3];
-    } else {
-        ch = 0xFFFFFFFF;
-    }
+    int len = u8_seqlen(*s);
+    for (int i = 0; i < len; i++)
+        ch = ch << 8 | *(s + i) & 0xFF;
 
     return u8tou32(ch);
 }
