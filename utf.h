@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define u8_iscontbyte(a) (((a) & 0xC0) == 0x80)
+#define u16_issurrogate(a) ((a) >= 0xD800 && (a) <= 0xDFFF)
+
 typedef uint32_t utf8_t, utf16_t, utf32_t;
 
 utf8_t u32tou8(utf32_t c);
