@@ -12,5 +12,7 @@ utf16_t u32tou16(utf32_t c);
 utf32_t u16tou32(utf16_t c);
 utf32_t u8_strget(const char *s, size_t i);
 size_t u8_strlen(const char *s);
+size_t u16_strlen(const uint16_t *s);
+size_t u32_strlen(const uint32_t *s);
 
 #endif /* UTF_H */
