@@ -15,7 +15,7 @@ static int u8_seqlen(char c)
 }
 
 // Also unsafe code
-utf32_t u8_strget(const char *s, size_t i)
+utf32_t u8_strget(const char8_t *s, size_t i)
 {
     utf8_t ch = 0;
 
