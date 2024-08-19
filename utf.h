@@ -20,5 +20,6 @@ size_t u8_strlen(const char8_t *s);
 size_t u16_strlen(const char16_t *s);
 size_t u32_strlen(const char32_t *s);
 void str_u8tou32(char32_t *restrict dst, const char8_t *restrict src);
+char8_t *u8_strat(const char8_t *s, size_t i);
 
 #endif /* UTF_H */
