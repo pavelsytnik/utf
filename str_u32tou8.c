@@ -17,6 +17,8 @@ void str_u32tou8(char8_t *restrict dst, const char32_t *restrict src)
             *dst++ = *src >> 12 & 0x3F | 0x80;
             *dst++ = *src >> 6 & 0x3F | 0x80;
             *dst++ = *src & 0x3F | 0x80;
+        } else {
+            break;
         }
         src++;
     }
