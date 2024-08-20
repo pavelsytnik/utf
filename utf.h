@@ -14,8 +14,17 @@
 
 typedef uint32_t utf8_t, utf16_t, utf32_t;
 
+enum utf_error {
+    UTF_OK = 0,
+    UTF_BAD_BYTE,
+    UTF_UNEXPECTED_CONTINUATION,
+    UTF_TRUNCATED,
+    UTF_OVERLONG,
+    UTF_BAD_CODEPOINT
+};
+
 utf8_t u32tou8(utf32_t c);
-utf32_t u8tou32(utf8_t c);
+utf32_t u8tou32(utf8_t c); 
 utf16_t u32tou16(utf32_t c);
 utf32_t u16tou32(utf16_t c);
 utf32_t u8_strget(const char8_t *s, size_t i);
