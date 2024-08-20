@@ -12,8 +12,6 @@
 #define isunicoderange(a) ((char32_t) (a) <= 0x10FFFF)
 #define isvalidunicode(a) (!u16_issurrogate(a) && isunicoderange(a))
 
-typedef uint32_t utf8_t, utf16_t, utf32_t;
-
 enum utf_error {
     UTF_OK = 0,
     UTF_BAD_BYTE,
@@ -23,11 +21,7 @@ enum utf_error {
     UTF_BAD_CODEPOINT
 };
 
-utf8_t u32tou8(utf32_t c);
-utf32_t u8tou32(utf8_t c); 
-utf16_t u32tou16(utf32_t c);
-utf32_t u16tou32(utf16_t c);
-utf32_t u8_strget(const char8_t *s, size_t i);
+char32_t u8_strget(const char8_t *s, size_t i);
 size_t u8_strlen(const char8_t *s);
 size_t u16_strlen(const char16_t *s);
 size_t u32_strlen(const char32_t *s);
