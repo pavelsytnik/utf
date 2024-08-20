@@ -37,4 +37,8 @@ void str_u32tou16(char16_t *restrict dst, const char32_t *restrict src);
 void str_u16tou32(char32_t *restrict dst, const char16_t *restrict src);
 char8_t *u8_strat(const char8_t *s, size_t i);
 
+const char8_t *str_u8tou32_s(char32_t *restrict dst,
+                             const char8_t *restrict src,
+                             enum utf_error *stat);
+
 #endif /* UTF_H */
