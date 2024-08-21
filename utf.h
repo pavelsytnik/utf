@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "chartypes.h"
 
@@ -44,5 +45,7 @@ enum utf_endianness utf_receive_endianness(void);
 
 uint16_t utf_swapbytes_uint16(uint16_t n);
 uint32_t utf_swapbytes_uint32(uint32_t n);
+
+char8_t *utf_fu8read(char8_t *buf, size_t count, FILE *stream);
 
 #endif /* UTF_H */
