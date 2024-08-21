@@ -21,6 +21,11 @@ enum utf_error {
     UTF_BAD_CODEPOINT
 };
 
+enum utf_endianness {
+    UTF_LITTLE_ENDIAN = 1,
+    UTF_BIG_ENDIAN = 2
+};
+
 char32_t u8_strget(const char8_t *s, size_t i);
 size_t u8_strlen(const char8_t *s);
 size_t u16_strlen(const char16_t *s);
@@ -34,5 +39,7 @@ char8_t *u8_strat(const char8_t *s, size_t i);
 const char8_t *str_u8tou32_s(char32_t *restrict dst,
                              const char8_t *restrict src,
                              enum utf_error *stat);
+
+enum utf_endianness utf_receive_endianness(void);
 
 #endif /* UTF_H */
