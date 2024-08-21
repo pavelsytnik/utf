@@ -42,4 +42,7 @@ const char8_t *str_u8tou32_s(char32_t *restrict dst,
 
 enum utf_endianness utf_receive_endianness(void);
 
+uint16_t utf_swapbytes_uint16(uint16_t n);
+uint32_t utf_swapbytes_uint32(uint32_t n);
+
 #endif /* UTF_H */
