@@ -91,10 +91,14 @@ enum utf_error utf_validate_next(const char8_t **p_s, uint32_t *p_codepoint)
         return err;
 
     if (utf_is_overlong(cp, len))
-        return UTF_OVERLONG_SEQUENCE;
+        err = UTF_OVERLONG_SEQUENCE;
+    else if (!UTF_IS_VALID_CODEPOINT(cp))
+        err = UTF_INVALID_CODEPOINT;
 
-    if (!UTF_IS_VALID_CODEPOINT(cp))
-        return UTF_INVALID_CODEPOINT;
+    if (err != UTF_OK) {
+        *p_s -= len - 1;
+        return err;
+    }
 
     *p_codepoint = cp;
     ++*p_s;

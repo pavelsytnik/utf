@@ -88,62 +88,27 @@ void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src)
 
 const char8_t *utf_str8to32_s(char32_t *restrict dst,
                               const char8_t *restrict src,
+                              size_t n,
                               enum utf_error *stat)
 {
+    if (dst == NULL || src == NULL) {
+        *stat = UTF_NOT_ENOUGH_ROOM;
+        return NULL;
+    }
+
     *stat = UTF_OK;
 
-    while (*src != 0) {
-        char32_t ch = 0;
-        int seqlen = 0;
+    if (stat == NULL)
+        return NULL;
 
-        // READ START BYTE OF SEQUENCE
-        if ((*src & 0x80) == 0x00) {
-            ch |= *src++;
-            seqlen = 1;
-        } else if ((*src & 0xE0) == 0xC0) {
-            ch |= *src++ & 0x1F;
-            seqlen = 2;
-        } else if ((*src & 0xF0) == 0xE0) {
-            ch |= *src++ & 0x0F;
-            seqlen = 3;
-        } else if ((*src & 0xF8) == 0xF0) {
-            ch |= *src++ & 0x07;
-            seqlen = 4;
-        } else {
-            *stat = UTF_INVALID_LEAD;
+    while (*src != 0 && n-- > 0) {
+        uint32_t cp;
+        enum utf_error err = utf_validate_next(&src, &cp);
+        if (err != UTF_OK) {
+            *stat = err;
             break;
         }
-
-        // READ CONTINUATION BYTES
-        for (int i = 0; i < seqlen - 1; ++i) {
-            if ((*src & 0xC0) == 0x80) {
-                ch = ch << 6 | *src++ & 0x3F;
-            } else if (*src == 0) {
-                *stat = UTF_NOT_ENOUGH_ROOM;
-                break;
-            } else {
-                *stat = UTF_INVALID_TRAIL;
-                break;
-            }
-        }
-        // CHARACTER HAS BEEN READ
-
-        if (ch <= 0x7F   && seqlen > 1 ||
-            ch <= 0x7FF  && seqlen > 2 ||
-            ch <= 0xFFFF && seqlen > 3)
-        {
-            *stat = UTF_OVERLONG_SEQUENCE;
-            src -= seqlen;
-            break;
-        }
-
-        if (ch > 0x10FFFF) {
-            *stat = UTF_INVALID_CODEPOINT;
-            src -= 4;
-            break;
-        }
-
-        *dst++ = ch;
+        *dst++ = cp;
     }
 
     *dst = 0;

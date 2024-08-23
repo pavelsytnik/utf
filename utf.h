@@ -61,6 +61,7 @@ char8_t *utf_str8at(const char8_t *s, size_t i);
 
 const char8_t *utf_str8to32_s(char32_t *restrict dst,
                               const char8_t *restrict src,
+                              size_t n,
                               enum utf_error *stat);
 
 enum utf_endianness utf_receive_endianness(void);
@@ -70,5 +71,8 @@ uint32_t utf_swapbytes_uint32(uint32_t n);
 
 char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream);
 int utf_u8getc(char8_t *bytes, FILE *stream);
+
+// For internal usage
+enum utf_error utf_validate_next(const char8_t **strp, uint32_t *codepoint);
 
 #endif /* UTF_H */
