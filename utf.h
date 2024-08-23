@@ -43,32 +43,32 @@ enum utf_endianness {
     UTF_BIG_ENDIAN = 2
 };
 
-char32_t u8_strget(const char8_t *s, size_t i);
+char32_t utf_str8get(const char8_t *s, size_t i);
 
-size_t u8_strlen(const char8_t *s);
-size_t u16_strlen(const char16_t *s);
-size_t u32_strlen(const char32_t *s);
+size_t utf_str8len(const char8_t *s);
+size_t utf_str16len(const char16_t *s);
+size_t utf_str32len(const char32_t *s);
 
-size_t u8_strlen_s(const char8_t *s, size_t n);
-size_t u16_strlen_s(const char16_t *s, size_t n);
-size_t u32_strlen_s(const char32_t *s, size_t n);
+size_t utf_str8len_s(const char8_t *s, size_t n);
+size_t utf_str16len_s(const char16_t *s, size_t n);
+size_t utf_str32len_s(const char32_t *s, size_t n);
 
-void str_u8tou32(char32_t *restrict dst, const char8_t *restrict src);
-void str_u32tou8(char8_t *restrict dst, const char32_t *restrict src);
-void str_u32tou16(char16_t *restrict dst, const char32_t *restrict src);
-void str_u16tou32(char32_t *restrict dst, const char16_t *restrict src);
-char8_t *u8_strat(const char8_t *s, size_t i);
+void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src);
+void utf_str32to8(char8_t *restrict dst, const char32_t *restrict src);
+void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src);
+void utf_str16to32(char32_t *restrict dst, const char16_t *restrict src);
+char8_t *utf_str8at(const char8_t *s, size_t i);
 
-const char8_t *str_u8tou32_s(char32_t *restrict dst,
-                             const char8_t *restrict src,
-                             enum utf_error *stat);
+const char8_t *utf_str8to32_s(char32_t *restrict dst,
+                              const char8_t *restrict src,
+                              enum utf_error *stat);
 
 enum utf_endianness utf_receive_endianness(void);
 
 uint16_t utf_swapbytes_uint16(uint16_t n);
 uint32_t utf_swapbytes_uint32(uint32_t n);
 
-char8_t *utf_fu8read(char8_t *buf, size_t count, FILE *stream);
+char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream);
 int utf_u8getc(char8_t *bytes, FILE *stream);
 
 #endif /* UTF_H */

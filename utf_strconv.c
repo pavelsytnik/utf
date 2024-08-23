@@ -1,6 +1,6 @@
 #include "utf.h"
 
-void str_u8tou32(char32_t *restrict dst, const char8_t *restrict src)
+void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src)
 {
     while (*src != 0) {
         char32_t ch = 0;
@@ -26,7 +26,7 @@ void str_u8tou32(char32_t *restrict dst, const char8_t *restrict src)
     *dst = 0;
 }
 
-void str_u16tou32(char32_t *restrict dst, const char16_t *restrict src)
+void utf_str16to32(char32_t *restrict dst, const char16_t *restrict src)
 {
     while (*src != 0) {
         char32_t ch = 0;
@@ -44,7 +44,7 @@ void str_u16tou32(char32_t *restrict dst, const char16_t *restrict src)
     *dst = 0;
 }
 
-void str_u32tou8(char8_t *restrict dst, const char32_t *restrict src)
+void utf_str32to8(char8_t *restrict dst, const char32_t *restrict src)
 {
     while (*src != 0) {
         if (*src < 0x80) {
@@ -69,7 +69,7 @@ void str_u32tou8(char8_t *restrict dst, const char32_t *restrict src)
     *dst = 0;
 }
 
-void str_u32tou16(char16_t *restrict dst, const char32_t *restrict src)
+void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src)
 {
     while (*src != 0) {
         if (*src < 0x10000) {
@@ -86,9 +86,9 @@ void str_u32tou16(char16_t *restrict dst, const char32_t *restrict src)
     *dst = 0;
 }
 
-const char8_t *str_u8tou32_s(char32_t *restrict dst,
-                             const char8_t *restrict src,
-                             enum utf_error *stat)
+const char8_t *utf_str8to32_s(char32_t *restrict dst,
+                              const char8_t *restrict src,
+                              enum utf_error *stat)
 {
     *stat = UTF_OK;
 

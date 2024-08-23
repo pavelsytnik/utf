@@ -4,21 +4,21 @@
 
 #include "utf.h"
 
-#define UTF8_TRY_INCREMENT_STRING_POINTER(strp) do { \
+#define UTF_TRY_INCREMENT_STRING_POINTER(strp) do { \
     if (++*(strp) == 0) \
         return UTF_NOT_ENOUGH_ROOM; \
     if ((**(strp) & 0xC0) != 0x80) \
         return UTF_INVALID_TRAIL; \
 } while (0)
 
-static int utf8_is_overlong(uint32_t codepoint, int length)
+static int utf_is_overlong(uint32_t codepoint, int length)
 {
     return codepoint <= 0x7F   && length > 1 ||
            codepoint <= 0x7FF  && length > 2 ||
            codepoint <= 0xFFFF && length > 3  ;
 }
 
-static int utf8_seqlen(const char8_t *c)
+static int utf_u8seqlen(const char8_t *c)
 {
     if ((*c & 0x80) == 0x00)
         return 1;
@@ -32,9 +32,9 @@ static int utf8_seqlen(const char8_t *c)
         return 0;
 }
 
-static enum utf_error utf8_getseq(const char8_t **p_s,
-                                  uint32_t *p_codepoint,
-                                  int length)
+static enum utf_error utf_getu8seq(const char8_t **p_s,
+                                   uint32_t *p_codepoint,
+                                   int length)
 {
     switch (length) {
     case 1:
@@ -44,30 +44,30 @@ static enum utf_error utf8_getseq(const char8_t **p_s,
     case 2:
         *p_codepoint = (**p_s & 0x1F) << 6;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= **p_s & 0x3F;
 
         break;
     case 3:
         *p_codepoint = (**p_s & 0x0F) << 12;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= (**p_s & 0x3F) << 6;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= **p_s & 0x3F;
 
         break;
     case 4:
         *p_codepoint = (**p_s & 0x07) << 18;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= (**p_s & 0x3F) << 12;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= (**p_s & 0x3F) << 6;
 
-        UTF8_TRY_INCREMENT_STRING_POINTER(p_s);
+        UTF_TRY_INCREMENT_STRING_POINTER(p_s);
         *p_codepoint |= **p_s & 0x3F;
 
         break;
@@ -78,19 +78,19 @@ static enum utf_error utf8_getseq(const char8_t **p_s,
     return UTF_OK;
 }
 
-enum utf_error utf8_validate_next(const char8_t **p_s, uint32_t *p_codepoint)
+enum utf_error utf_validate_next(const char8_t **p_s, uint32_t *p_codepoint)
 {
     if (**p_s == 0)
         return UTF_NOT_ENOUGH_ROOM;
 
     uint32_t cp = 0;
-    int len = utf8_seqlen(*p_s);
-    enum utf_error err = utf8_getseq(p_s, &cp, len);
+    int len = utf_u8seqlen(*p_s);
+    enum utf_error err = utf_getu8seq(p_s, &cp, len);
 
     if (err != UTF_OK)
         return err;
 
-    if (utf8_is_overlong(cp, len))
+    if (utf_is_overlong(cp, len))
         return UTF_OVERLONG_SEQUENCE;
 
     if (!UTF_IS_VALID_CODEPOINT(cp))

@@ -1,6 +1,6 @@
 #include "utf.h"
 
-char8_t *utf_fu8read(char8_t *buf, size_t count, FILE *stream)
+char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream)
 {
     if (count == 0) return NULL;
 

@@ -1,6 +1,6 @@
 #include "utf.h"
 
-static int u8_seqlen(char c)
+static int utf_u8seqlen(char c)
 {
     if ((c & 0x80) == 0x00)
         return 1;
@@ -15,25 +15,25 @@ static int u8_seqlen(char c)
 }
 
 // Also unsafe code
-char32_t u8_strget(const char8_t *s, size_t i)
+char32_t utf_str8get(const char8_t *s, size_t i)
 {
     char32_t ch = 0;
 
     while (i-- > 0)
-        s += u8_seqlen(*s);
+        s += utf_u8seqlen(*s);
 
-    int len = u8_seqlen(*s);
+    int len = utf_u8seqlen(*s);
     for (int i = 0; i < len; i++)
         ch = ch << 8 | *(s + i) & 0xFF;
 
-    return u8tou32(ch);
+    return u8tou32(ch); // I forgot to change this line
 }
 
 // TODO: append check for null-terminated character
-char8_t *u8_strat(const char8_t *s, size_t i)
+char8_t *utf_str8at(const char8_t *s, size_t i)
 {
     while (i-- > 0)
-        s += u8_seqlen(*s);
+        s += utf_u8seqlen(*s);
 
     return s;
 }
