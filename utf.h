@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "chartypes.h"
+#include "utf_char.h"
 
 #define UTF_CODEPOINT_MAX 0x10FFFFu
 
