@@ -28,3 +28,12 @@ char32_t u8_strget(const char8_t *s, size_t i)
 
     return u8tou32(ch);
 }
+
+// TODO: append check for null-terminated character
+char8_t *u8_strat(const char8_t *s, size_t i)
+{
+    while (i-- > 0)
+        s += u8_seqlen(*s);
+
+    return s;
+}
