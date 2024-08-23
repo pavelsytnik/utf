@@ -6,9 +6,9 @@
 
 #define UTF8_TRY_INCREMENT_STRING_POINTER(strp) do { \
     if (++*(strp) == 0) \
-        return UTF_TRUNCATED; /* NOT ENOUGH ROOM */ \
+        return UTF_NOT_ENOUGH_ROOM; \
     if ((**(strp) & 0xC0) != 0x80) \
-        return UTF_TRUNCATED; \
+        return UTF_INVALID_TRAIL; \
 } while (0)
 
 static int utf8_is_overlong(uint32_t codepoint, int length)
@@ -72,7 +72,7 @@ static enum utf_error utf8_getseq(const char8_t **p_s,
 
         break;
     default:
-        return UTF_BAD_BYTE; // BAD_LEAD
+        return UTF_INVALID_LEAD;
     }
 
     return UTF_OK;
@@ -81,7 +81,7 @@ static enum utf_error utf8_getseq(const char8_t **p_s,
 enum utf_error utf8_validate_next(const char8_t **p_s, uint32_t *p_codepoint)
 {
     if (**p_s == 0)
-        return UTF_TRUNCATED; // NOT ENOUGH ROOM
+        return UTF_NOT_ENOUGH_ROOM;
 
     uint32_t cp = 0;
     int len = utf8_seqlen(*p_s);
@@ -91,10 +91,10 @@ enum utf_error utf8_validate_next(const char8_t **p_s, uint32_t *p_codepoint)
         return err;
 
     if (utf8_is_overlong(cp, len))
-        return UTF_OVERLONG;
+        return UTF_OVERLONG_SEQUENCE;
 
     if (!isvalidunicode(cp))
-        return UTF_BAD_CODEPOINT;
+        return UTF_INVALID_CODEPOINT;
 
     *p_codepoint = cp;
     ++*p_s;

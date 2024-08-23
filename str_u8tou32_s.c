@@ -1,8 +1,8 @@
 #include "utf.h"
 
 const char8_t *str_u8tou32_s(char32_t *restrict dst,
-                              const char8_t *restrict src,
-                              enum utf_error *stat)
+                             const char8_t *restrict src,
+                             enum utf_error *stat)
 {
     *stat = UTF_OK;
 
@@ -23,11 +23,8 @@ const char8_t *str_u8tou32_s(char32_t *restrict dst,
         } else if ((*src & 0xF8) == 0xF0) {
             ch |= *src++ & 0x07;
             seqlen = 4;
-        } else if ((*src & 0xC0) == 0x80) {
-            *stat = UTF_UNEXPECTED_CONTINUATION;
-            break;
         } else {
-            *stat = UTF_BAD_BYTE;
+            *stat = UTF_INVALID_LEAD;
             break;
         }
 
@@ -35,15 +32,11 @@ const char8_t *str_u8tou32_s(char32_t *restrict dst,
         for (int i = 0; i < seqlen - 1; ++i) {
             if ((*src & 0xC0) == 0x80) {
                 ch = ch << 6 | *src++ & 0x3F;
-            } else if ((*src & 0x80) == 0x00 ||
-                       (*src & 0xE0) == 0xC0 ||
-                       (*src & 0xF0) == 0xE0 ||
-                       (*src & 0xF8) == 0xF0)
-            {
-                    *stat = UTF_TRUNCATED;
-                    break;
+            } else if (*src == 0) {
+                *stat = UTF_NOT_ENOUGH_ROOM;
+                break;
             } else {
-                *stat = UTF_BAD_BYTE;
+                *stat = UTF_INVALID_TRAIL;
                 break;
             }
         }
@@ -53,13 +46,13 @@ const char8_t *str_u8tou32_s(char32_t *restrict dst,
             ch <= 0x7FF  && seqlen > 2 ||
             ch <= 0xFFFF && seqlen > 3)
         {
-            *stat = UTF_OVERLONG;
+            *stat = UTF_OVERLONG_SEQUENCE;
             src -= seqlen;
             break;
         }
 
         if (ch > 0x10FFFF) {
-            *stat = UTF_BAD_CODEPOINT;
+            *stat = UTF_INVALID_CODEPOINT;
             src -= 4;
             break;
         }
