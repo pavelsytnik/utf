@@ -7,11 +7,27 @@
 
 #include "chartypes.h"
 
-#define u8_iscontbyte(a) (((a) & 0xC0) == 0x80)
-#define u16_issurrogate(a) ((a) >= 0xD800 && (a) <= 0xDFFF)
+#define UTF_CODEPOINT_MAX 0x10FFFFu
 
-#define isunicoderange(a) ((char32_t) (a) <= 0x10FFFF)
-#define isvalidunicode(a) (!u16_issurrogate(a) && isunicoderange(a))
+#define UTF_LEAD_SURROGATE_MIN 0xD800u
+#define UTF_LEAD_SURROGATE_MAX 0xDBFFu
+#define UTF_TRAIL_SURROGATE_MIN 0xDC00u
+#define UTF_TRAIL_SURROGATE_MAX 0xDFFFu
+
+#define UTF_IS_TRAIL(a) \
+    (((a) & 0xC0) == 0x80)
+
+#define UTF_IS_LEAD_SURROGATE(a) \
+    ((a) >= UTF_LEAD_SURROGATE_MIN && (a) <= UTF_LEAD_SURROGATE_MAX)
+
+#define UTF_IS_TRAIL_SURROGATE(a) \
+    ((a) >= UTF_TRAIL_SURROGATE_MIN && (a) <= UTF_TRAIL_SURROGATE_MAX)
+
+#define UTF_IS_SURROGATE(a) \
+    ((a) >= UTF_LEAD_SURROGATE_MIN && (a) <= UTF_TRAIL_SURROGATE_MAX)
+
+#define UTF_IS_VALID_CODEPOINT(a) \
+    ((a) <= UTF_CODEPOINT_MAX && !UTF_IS_SURROGATE(a))
 
 enum utf_error {
     UTF_OK = 0,

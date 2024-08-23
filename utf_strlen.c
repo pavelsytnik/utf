@@ -6,7 +6,7 @@ size_t u8_strlen(const char8_t *s)
 {
     size_t len = 0;
     while (*s++ != NULLCHAR)
-        if (!u8_iscontbyte(*s))
+        if (!UTF_IS_TRAIL(*s))
             len++;
     return len;
 }
@@ -16,7 +16,7 @@ size_t u16_strlen(const char16_t *s)
     size_t len = 0;
     while (*s++ != NULLCHAR) {
         len++;
-        if (u16_issurrogate(*s))
+        if (UTF_IS_SURROGATE(*s))
             s++;
     }
     return len;
@@ -37,7 +37,7 @@ size_t u8_strlen_s(const char8_t *s, size_t n)
 
     size_t len = 0;
     while (*s != NULLCHAR && n > 0) {
-        if (!u8_iscontbyte(*s))
+        if (!UTF_IS_TRAIL(*s))
             len++;
         s++;
         n--;
@@ -53,7 +53,7 @@ size_t u16_strlen_s(const char16_t *s, size_t n)
 
     size_t len = 0;
     while (*s != NULLCHAR && n > 0) {
-        if (u16_issurrogate(*s))
+        if (UTF_IS_SURROGATE(*s))
             s++;
         len++;
         s++;
