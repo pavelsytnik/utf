@@ -181,3 +181,51 @@ uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
     *err = UTF_OK;
     return cp;
 }
+
+// TODO: get rid of extra conversions
+size_t utf_u8fread_s(char8_t *buf,
+                     size_t count,
+                     FILE *stream,
+                     enum utf_error *err)
+{
+    if (buf    == NULL ||
+        count  == 0    ||
+        stream == NULL ||
+        err    == NULL   )
+        return 0;
+
+    size_t read_chars = 0;
+
+    *err = UTF_OK;
+
+    while (count-- > 0) {
+        enum utf_error stat;
+        uint32_t cp = utf_u8getc_s(stream, &stat);
+
+        if (cp == 0xFFFFFFFF) {
+            *err = stat;
+            break;
+        }
+
+        if (cp <= 0x7F) {
+            *buf++ = cp;
+        } else if (cp <= 0x7FF) {
+            *buf++ = cp >> 6 | 0xC0;
+            *buf++ = cp & 0x3F | 0x80;
+        } else if (cp <= 0xFFFF) {
+            *buf++ = cp >> 12 | 0xE0;
+            *buf++ = cp >> 6 & 0x3F | 0x80;
+            *buf++ = cp & 0x3F | 0x80;
+        } else if (cp <= 0x10FFFF) {
+            *buf++ = cp >> 18 | 0xF0;
+            *buf++ = cp >> 12 & 0x3F | 0x80;
+            *buf++ = cp >> 6 & 0x3F | 0x80;
+            *buf++ = cp & 0x3F | 0x80;
+        }
+
+        ++read_chars;
+    }
+
+    *buf = 0;
+    return read_chars;
+}
