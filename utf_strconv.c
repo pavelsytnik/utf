@@ -103,7 +103,7 @@ const char8_t *utf_str8to32_s(char32_t *restrict dst,
 
     while (*src != 0 && n-- > 0) {
         uint32_t cp;
-        enum utf_error err = utf_validate_next(&src, &cp);
+        enum utf_error err = utf_u8next(&src, &cp);
         if (err != UTF_OK) {
             *stat = err;
             break;
