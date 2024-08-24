@@ -74,5 +74,6 @@ int utf_u8getc(char8_t *bytes, FILE *stream);
 
 // For internal usage
 enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint);
+enum utf_error utf_u16next(const char16_t **strp, uint32_t *codepoint);
 
 #endif /* UTF_H */

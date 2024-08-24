@@ -96,3 +96,32 @@ enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint)
 
     return UTF_OK;
 }
+
+enum utf_error utf_u16next(const char16_t **strp, uint32_t *codepoint)
+{
+    if (**strp == 0)
+        return UTF_NOT_ENOUGH_ROOM;
+
+    uint32_t cp = 0;
+
+    if (!UTF_IS_SURROGATE(**strp)) {
+        cp = **strp;
+    } else if (UTF_IS_LEAD_SURROGATE(**strp)) {
+        cp = **strp - UTF_LEAD_SURROGATE_MIN << 10;
+
+        if (*++*strp == 0)
+            return UTF_NOT_ENOUGH_ROOM;
+        if (!UTF_IS_TRAIL_SURROGATE(**strp))
+            return UTF_INVALID_TRAIL;
+
+        cp |= **strp - UTF_TRAIL_SURROGATE_MIN;
+        cp += 0x10000;
+    } else {
+        return UTF_INVALID_LEAD;
+    }
+
+    *codepoint = cp;
+    ++*strp;
+
+    return UTF_OK;
+}
