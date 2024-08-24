@@ -86,33 +86,36 @@ void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src)
     *dst = 0;
 }
 
+#define UTF_GENERATE_BODY_FOR_STRTO32FROM(i)            \
+    if (dst == NULL || src == NULL) {                   \
+        *stat = UTF_NOT_ENOUGH_ROOM;                    \
+        return NULL;                                    \
+    }                                                   \
+                                                        \
+    *stat = UTF_OK;                                     \
+                                                        \
+    if (stat == NULL)                                   \
+        return NULL;                                    \
+                                                        \
+    while (*src != 0 && n-- > 0) {                      \
+        uint32_t cp;                                    \
+        enum utf_error err = utf_u##i##next(&src, &cp); \
+        if (err != UTF_OK) {                            \
+            *stat = err;                                \
+            break;                                      \
+        }                                               \
+        *dst++ = cp;                                    \
+    }                                                   \
+                                                        \
+    *dst = 0;                                           \
+    return src;
+
 const char8_t *utf_str8to32_s(char32_t *restrict dst,
                               const char8_t *restrict src,
                               size_t n,
                               enum utf_error *stat)
 {
-    if (dst == NULL || src == NULL) {
-        *stat = UTF_NOT_ENOUGH_ROOM;
-        return NULL;
-    }
-
-    *stat = UTF_OK;
-
-    if (stat == NULL)
-        return NULL;
-
-    while (*src != 0 && n-- > 0) {
-        uint32_t cp;
-        enum utf_error err = utf_u8next(&src, &cp);
-        if (err != UTF_OK) {
-            *stat = err;
-            break;
-        }
-        *dst++ = cp;
-    }
-
-    *dst = 0;
-    return src;
+    UTF_GENERATE_BODY_FOR_STRTO32FROM(8);
 }
 
 const char16_t *utf_str16to32_s(char32_t *restrict dst,
@@ -120,26 +123,5 @@ const char16_t *utf_str16to32_s(char32_t *restrict dst,
                                 size_t n,
                                 enum utf_error *stat)
 {
-    if (dst == NULL || src == NULL) {
-        *stat = UTF_NOT_ENOUGH_ROOM;
-        return NULL;
-    }
-
-    *stat = UTF_OK;
-
-    if (stat == NULL)
-        return NULL;
-
-    while (*src != 0 && n-- > 0) {
-        uint32_t cp;
-        enum utf_error err = utf_u16next(&src, &cp);
-        if (err != UTF_OK) {
-            *stat = err;
-            break;
-        }
-        *dst++ = cp;
-    }
-
-    *dst = 0;
-    return src;
+    UTF_GENERATE_BODY_FOR_STRTO32FROM(16);
 }
