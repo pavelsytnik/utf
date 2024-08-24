@@ -125,3 +125,48 @@ enum utf_error utf_u16next(const char16_t **strp, uint32_t *codepoint)
 
     return UTF_OK;
 }
+
+// The function has to be within 'utf_fio.c'
+// TODO: refactor internal logic
+uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
+{
+    int c;
+    uint32_t cp;
+    int len;
+
+    if ((c = getc(stream)) == EOF) {
+        *err = UTF_OK;
+        return 0xFFFFFFFF;
+    }
+
+    len = UTF_SEQUENCE_LENGTH(c);
+    if (len == 0) {
+        *err = UTF_INVALID_LEAD;
+        return 0xFFFFFFFF;
+    }
+    cp = c;
+
+    while (--len) {
+        if ((c = getc(stream)) == EOF) {
+            *err = UTF_NOT_ENOUGH_ROOM;
+            return 0xFFFFFFFF;
+        }
+        if ((c & 0xC0) != 0x80) {
+            *err = UTF_INVALID_TRAIL;
+            return 0xFFFFFFFF;
+        }
+        cp = cp << 6 | c & 0x3F;
+    }
+
+    if (!UTF_IS_VALID_CODEPOINT(cp)) {
+        *err = UTF_INVALID_CODEPOINT;
+        return 0xFFFFFFFF;
+    }
+    if (UTF_IS_OVERLONG_SEQUENCE(cp, len)) {
+        *err = UTF_OVERLONG_SEQUENCE;
+        return 0xFFFFFFFF;
+    }
+
+    *err = UTF_OK;
+    return cp;
+}
