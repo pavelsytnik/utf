@@ -140,11 +140,22 @@ uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
     }
 
     len = UTF_SEQUENCE_LENGTH(c);
-    if (len == 0) {
+    switch (len) {
+    case 1:
+        cp = c;
+        break;
+    case 2:
+        cp = c & 0x1F;
+        break;
+    case 3:
+        cp = c & 0x0F;
+        break;
+    case 4:
+        cp = c & 0x07;
+    default:
         *err = UTF_INVALID_LEAD;
         return 0xFFFFFFFF;
     }
-    cp = c;
 
     while (--len) {
         if ((c = getc(stream)) == EOF) {
