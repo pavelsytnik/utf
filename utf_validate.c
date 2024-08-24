@@ -5,7 +5,7 @@
 #include "utf.h"
 
 #define UTF_NEXT_TRAIL_OR_FAIL(str) do { \
-    if (++(str) == 0) \
+    if (*++(str) == 0) \
         return UTF_NOT_ENOUGH_ROOM; \
     if ((*(str) & 0xC0) != 0x80) \
         return UTF_INVALID_TRAIL; \
