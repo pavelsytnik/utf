@@ -10,16 +10,16 @@
 } while (0)
 
 #define UTF_IS_OVERLONG_SEQUENCE(codepoint, length) \
-    ((codepoint) <= 0x7F   && (length) > 1 || \
-     (codepoint) <= 0x7FF  && (length) > 2 || \
+    ((codepoint) <= 0x7F   && (length) > 1 ||       \
+     (codepoint) <= 0x7FF  && (length) > 2 ||       \
      (codepoint) <= 0xFFFF && (length) > 3 )
 
-#define UTF_SEQUENCE_LENGTH(c) \
+#define UTF_SEQUENCE_LENGTH(c)  \
     (((c) & 0x80) == 0x00 ? 1 : \
      ((c) & 0xE0) == 0xC0 ? 2 : \
      ((c) & 0xF0) == 0xE0 ? 3 : \
      ((c) & 0xF8) == 0xF0 ? 4 : \
-                            0  )
+                            0 )
 
 char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream)
 {
@@ -58,7 +58,7 @@ char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream)
             count--;
         }
     }
-    end:
+end:
     *buf = 0;
     return buf;
 }
@@ -169,50 +169,49 @@ uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
 {
     int c;
     uint32_t cp;
-    int len;
+    size_t len;
 
     if ((c = getc(stream)) == EOF) {
         *err = UTF_OK;
-        return 0xFFFFFFFF;
+        return UTF_EOF;
     }
 
-    len = UTF_SEQUENCE_LENGTH(c);
-    switch (len) {
-        case 1:
-            cp = c;
-            break;
-        case 2:
-            cp = c & 0x1F;
-            break;
-        case 3:
-            cp = c & 0x0F;
-            break;
-        case 4:
-            cp = c & 0x07;
-        default:
-            *err = UTF_INVALID_LEAD;
-            return 0xFFFFFFFF;
+    switch (len = UTF_SEQUENCE_LENGTH(c)) {
+    case 1:
+        cp = c;
+        break;
+    case 2:
+        cp = c & 0x1F;
+        break;
+    case 3:
+        cp = c & 0x0F;
+        break;
+    case 4:
+        cp = c & 0x07;
+    default:
+        *err = UTF_INVALID_LEAD;
+        return UTF_EOF;
     }
 
     while (--len) {
         if ((c = getc(stream)) == EOF) {
             *err = UTF_NOT_ENOUGH_ROOM;
-            return 0xFFFFFFFF;
+            return UTF_EOF;
         }
         if ((c & 0xC0) != 0x80) {
             *err = UTF_INVALID_TRAIL;
-            return 0xFFFFFFFF;
+            return UTF_EOF;
         }
         cp = cp << 6 | c & 0x3F;
     }
 
     if (!UTF_IS_VALID_CODEPOINT(cp)) {
         *err = UTF_INVALID_CODEPOINT;
-        return 0xFFFFFFFF;
+        return UTF_EOF;
     }
     if (UTF_IS_OVERLONG_SEQUENCE(cp, len)) {
         *err = UTF_OVERLONG_SEQUENCE;
-        return 0xFFFFFFFF;
+        return UTF_EOF;
     }
 
     *err = UTF_OK;

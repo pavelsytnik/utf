@@ -7,6 +7,8 @@
 
 #include "utf_char.h"
 
+#define UTF_EOF 0xFFFFFFFFu
+
 #define UTF_CODEPOINT_MAX 0x10FFFFu
 
 #define UTF_LEAD_SURROGATE_MIN 0xD800u
