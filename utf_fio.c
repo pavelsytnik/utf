@@ -1,5 +1,14 @@
 #include "utf.h"
 
+#include <string.h>
+
+#define UTF_NEXT_TRAIL_OR_FAIL(c, stream) do { \
+    if ((*(c) = getc(stream)) == EOF)          \
+        return UTF_NOT_ENOUGH_ROOM;            \
+    if ((*(c) & 0xC0) != 0x80)                 \
+        return UTF_INVALID_TRAIL;              \
+} while (0)
+
 #define UTF_IS_OVERLONG_SEQUENCE(codepoint, length) \
     ((codepoint) <= 0x7F   && (length) > 1 || \
      (codepoint) <= 0x7FF  && (length) > 2 || \
@@ -86,7 +95,75 @@ int utf_u8getc(char8_t *bytes, FILE *stream)
     return nbytes;
 }
 
-// The function has to be within 'utf_fio.c'
+static enum utf_error utf_fread_sequence(char8_t *sequence,
+                                         size_t *length,
+                                         FILE *stream)
+{
+    int c = fgetc(stream);
+    uint32_t codepoint = 0;
+
+    if (feof(stream)) {
+        *length = 0;
+        return UTF_OK;
+    }
+
+    switch (*length = UTF_SEQUENCE_LENGTH(c)) {
+    case 1:
+        sequence[0] = c;
+        codepoint |= c;
+
+        break;
+    case 2:
+        sequence[0] = c;
+        codepoint |= (c & 0x1F) << 6;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[1] = c;
+        codepoint |= (c & 0x3F);
+
+        break;
+    case 3:
+        sequence[0] = c;
+        codepoint |= (c & 0x0F) << 12;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[1] = c;
+        codepoint |= (c & 0x3F) << 6;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[2] = c;
+        codepoint |= (c & 0x3F);
+
+        break;
+    case 4:
+        sequence[0] = c;
+        codepoint |= (c & 0x07) << 18;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[1] = c;
+        codepoint |= (c & 0x3F) << 12;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[2] = c;
+        codepoint |= (c & 0x3F) << 6;
+
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        sequence[3] = c;
+        codepoint |= (c & 0x3F);
+
+        break;
+    default:
+        return UTF_INVALID_LEAD;
+    }
+
+    if (!UTF_IS_VALID_CODEPOINT(codepoint))
+        return UTF_INVALID_CODEPOINT;
+    if (UTF_IS_OVERLONG_SEQUENCE(codepoint, *length))
+        return UTF_OVERLONG_SEQUENCE;
+
+    return UTF_OK;
+}
+
 // TODO: refactor internal logic
 uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
 {
@@ -142,7 +219,6 @@ uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
     return cp;
 }
 
-// TODO: get rid of extra conversions
 size_t utf_u8fread_s(char8_t *buf,
                      size_t count,
                      FILE *stream,
@@ -160,29 +236,17 @@ size_t utf_u8fread_s(char8_t *buf,
 
     while (count-- > 0) {
         enum utf_error stat;
-        uint32_t cp = utf_u8getc_s(stream, &stat);
+        char8_t c[4];
+        size_t len;
 
-        if (cp == 0xFFFFFFFF) {
+        stat = utf_fread_sequence(c, &len, stream);
+        if (stat != UTF_OK || len == 0) {
             *err = stat;
             break;
         }
 
-        if (cp <= 0x7F) {
-            *buf++ = cp;
-        } else if (cp <= 0x7FF) {
-            *buf++ = cp >> 6 | 0xC0;
-            *buf++ = cp & 0x3F | 0x80;
-        } else if (cp <= 0xFFFF) {
-            *buf++ = cp >> 12 | 0xE0;
-            *buf++ = cp >> 6 & 0x3F | 0x80;
-            *buf++ = cp & 0x3F | 0x80;
-        } else if (cp <= 0x10FFFF) {
-            *buf++ = cp >> 18 | 0xF0;
-            *buf++ = cp >> 12 & 0x3F | 0x80;
-            *buf++ = cp >> 6 & 0x3F | 0x80;
-            *buf++ = cp & 0x3F | 0x80;
-        }
-
+        memcpy(buf, c, len);
+        buf += len;
         ++read_chars;
     }
 
