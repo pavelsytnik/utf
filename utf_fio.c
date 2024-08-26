@@ -252,3 +252,14 @@ size_t utf_u8fread_s(char8_t *buf,
     *buf = 0;
     return read_chars;
 }
+
+bool utf_u8fread_bom(FILE *stream)
+{
+    if (getc(stream) == 0xEF &&
+        getc(stream) == 0xBB &&
+        getc(stream) == 0xBF)
+        return true;
+
+    rewind(stream);
+    return false;
+}

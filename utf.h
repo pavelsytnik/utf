@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "utf_char.h"
 
@@ -79,6 +80,8 @@ size_t utf_u8fread_s(char8_t *buf,
                      size_t count,
                      FILE *stream,
                      enum utf_error *err);
+
+bool utf_u8fread_bom(FILE *stream);
 
 // For internal usage
 enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint);
