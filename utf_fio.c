@@ -1,5 +1,6 @@
 #include "utf.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #define UTF_NEXT_TRAIL_OR_FAIL(c, stream) do { \
@@ -20,6 +21,72 @@
      ((c) & 0xF0) == 0xE0 ? 3 : \
      ((c) & 0xF8) == 0xF0 ? 4 : \
                             0 )
+
+struct utf_file {
+    enum utf_file_encoding encoding;
+    FILE *file;
+};
+
+static const char *utf_mode_str(enum utf_file_mode mode)
+{
+    switch (mode) {
+        case UTF_READ:
+            return "r";
+        case UTF_WRITE:
+            return "w";
+        case UTF_WRITE | UTF_APPEND:
+        case UTF_APPEND:
+            return "a";
+        case UTF_READ | UTF_APPEND:
+            return "r+";
+        case UTF_READ | UTF_WRITE:
+            return "w+";
+        case UTF_READ | UTF_WRITE | UTF_APPEND:
+            return "a+";
+        case UTF_READ | UTF_BINARY:
+            return "rb";
+        case UTF_WRITE | UTF_BINARY:
+            return "wb";
+        case UTF_WRITE | UTF_APPEND | UTF_BINARY:
+        case UTF_APPEND | UTF_BINARY:
+            return "ab";
+        case UTF_READ | UTF_APPEND | UTF_BINARY:
+            return "r+b";
+        case UTF_READ | UTF_WRITE | UTF_BINARY:
+            return "w+b";
+        case UTF_READ | UTF_WRITE | UTF_APPEND | UTF_BINARY:
+            return "a+b";
+        default:
+            return NULL;
+    }
+}
+
+struct utf_file *utf_fopen(const char *filename,
+                           enum utf_file_mode mode,
+                           enum utf_file_encoding encoding)
+{
+    struct utf_file *file = malloc(sizeof(struct utf_file));
+    FILE *c_file = fopen(filename, utf_mode_str(mode));
+    if (!file || !c_file)
+        return NULL;
+
+    file->encoding = encoding;
+    file->file = c_file;
+
+    return file;
+}
+
+bool utf_fclose(struct utf_file *stream)
+{
+    bool close_state = fclose(stream->file) == 0;
+    free(stream);
+    return close_state;
+}
+
+FILE *utf_c_file(const struct utf_file *stream)
+{
+    return stream->file;
+}
 
 char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream)
 {
