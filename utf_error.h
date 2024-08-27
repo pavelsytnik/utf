@@ -1,0 +1,13 @@
+#ifndef UTF_ERROR_H
+#define UTF_ERROR_H
+
+enum utf_error {
+    UTF_OK = 0,
+    UTF_INVALID_LEAD,
+    UTF_INVALID_TRAIL,
+    UTF_NOT_ENOUGH_ROOM,
+    UTF_OVERLONG_SEQUENCE,
+    UTF_INVALID_CODEPOINT
+};
+
+#endif /* UTF_ERROR_H */
