@@ -37,6 +37,8 @@ struct utf_file *utf_fopen(const char *filename,
 bool utf_fclose(struct utf_file *stream);
 
 FILE *utf_c_file(const struct utf_file *stream);
+enum utf_error utf_ferror(const struct utf_file *stream);
+bool utf_eof(const struct utf_file *stream);
 
 char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream);
 int utf_u8getc(char8_t *bytes, FILE *stream);

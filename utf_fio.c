@@ -24,6 +24,7 @@
 
 struct utf_file {
     enum utf_file_encoding encoding;
+    enum utf_error state;
     FILE *file;
 };
 
@@ -66,11 +67,13 @@ struct utf_file *utf_fopen(const char *filename,
                            enum utf_file_encoding encoding)
 {
     struct utf_file *file = malloc(sizeof(struct utf_file));
+    if (!file) return NULL;
+
     FILE *c_file = fopen(filename, utf_mode_str(mode));
-    if (!file || !c_file)
-        return NULL;
+    if (!c_file) { free(file); return NULL; }
 
     file->encoding = encoding;
+    file->state = UTF_OK;
     file->file = c_file;
 
     return file;
@@ -83,9 +86,19 @@ bool utf_fclose(struct utf_file *stream)
     return close_state;
 }
 
+bool utf_eof(const struct utf_file *stream)
+{
+    return feof(stream->file) != 0;
+}
+
 FILE *utf_c_file(const struct utf_file *stream)
 {
     return stream->file;
+}
+
+enum utf_error utf_ferror(const struct utf_file *stream)
+{
+    return stream->state;
 }
 
 char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream)
