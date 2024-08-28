@@ -1,5 +1,41 @@
 #include "utf.h"
 
+void utf_str8to16(char16_t *restrict dst, const char8_t *restrict src)
+{
+    while (*src != 0) {
+        uint32_t c32 = 0;
+        if ((*src & 0x80) == 0x00) {
+            c32 |= (*src++ & 0xFF) << 0;
+        } else if ((*src & 0xE0) == 0xC0) {
+            c32 |= (*src++ & 0x1F) << 6;
+            c32 |= (*src++ & 0x3F) << 0;
+        } else if ((*src & 0xF0) == 0xE0) {
+            c32 |= (*src++ & 0x0F) << 12;
+            c32 |= (*src++ & 0x3F) << 6;
+            c32 |= (*src++ & 0x3F) << 0;
+        } else if ((*src & 0xF8) == 0xF0) {
+            c32 |= (*src++ & 0x07) << 18;
+            c32 |= (*src++ & 0x3F) << 12;
+            c32 |= (*src++ & 0x3F) << 6;
+            c32 |= (*src++ & 0x3F) << 0;
+        } else {
+            break;
+        }
+
+        if (c32 < 0x10000) {
+            *dst++ = c32;
+        } else if (c32 < 0x110000) {
+            c32 -= 0x10000;
+            *dst++ = (c32 >> 10) + 0xD800;
+            *dst++ = (c32 & 0x3FF) + 0xDC00;
+        } else {
+            break;
+        }
+    }
+
+    *dst = 0;
+}
+
 void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src)
 {
     while (*src != 0) {
@@ -23,6 +59,42 @@ void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src)
         }
         *dst++ = ch;
     }
+    *dst = 0;
+}
+
+void utf_str16to8(char8_t *restrict dst, const char16_t *restrict src)
+{
+    while (*src != 0) {
+        uint32_t c32 = 0;
+        if (*src >= 0xD800 && *src <= 0xDBFF) {
+            c32 |= *src++ - 0xD800 << 10;
+            c32 |= *src++ - 0xDC00;
+            c32 += 0x10000;
+        } else if (*src < 0xDC00 || *src > 0xDFFF) {
+            c32 |= *src++;
+        } else {
+            break;
+        }
+
+        if (c32 < 0x80) {
+            *dst++ = c32;
+        } else if (c32 < 0x800) {
+            *dst++ = c32 >> 6 | 0xC0;
+            *dst++ = c32 & 0x3F | 0x80;
+        } else if (c32 < 0x10000) {
+            *dst++ = c32 >> 12 | 0xE0;
+            *dst++ = c32 >> 6 & 0x3F | 0x80;
+            *dst++ = c32 & 0x3F | 0x80;
+        } else if (c32 < 0x110000) {
+            *dst++ = c32 >> 18 | 0xF0;
+            *dst++ = c32 >> 12 & 0x3F | 0x80;
+            *dst++ = c32 >> 6 & 0x3F | 0x80;
+            *dst++ = c32 & 0x3F | 0x80;
+        } else {
+            break;
+        }
+    }
+
     *dst = 0;
 }
 

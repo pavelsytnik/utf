@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 
+void utf_str8to16(char16_t *restrict dst, const char8_t *restrict src);
+void utf_str16to8(char8_t *restrict dst, const char16_t *restrict src);
 void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src);
 void utf_str32to8(char8_t *restrict dst, const char32_t *restrict src);
 void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src);
