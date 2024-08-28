@@ -298,37 +298,32 @@ uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
     return cp;
 }
 
-size_t utf_u8fread_s(char8_t *buf,
-                     size_t count,
-                     FILE *stream,
-                     enum utf_error *err)
+static size_t utf_internal_u8fread(char8_t *restrict buf,
+                                   size_t count,
+                                   struct utf_file *restrict stream)
 {
-    if (buf == NULL ||
-        count == 0 ||
-        stream == NULL ||
-        err == NULL)
+    if (buf    == NULL ||
+        count  == 0    ||
+        stream == NULL)
         return 0;
 
     size_t read_chars = 0;
-
-    *err = UTF_OK;
+    enum utf_error stat = UTF_OK;
 
     while (count-- > 0) {
-        enum utf_error stat;
         char8_t c[4];
         size_t len;
 
-        stat = utf_fread_sequence(c, &len, stream);
-        if (stat != UTF_OK || len == 0) {
-            *err = stat;
+        stat = utf_fread_sequence(c, &len, stream->file);
+        if (stat != UTF_OK || len == 0)
             break;
-        }
 
         memcpy(buf, c, len);
         buf += len;
         ++read_chars;
     }
 
+    stream->state = stat;
     *buf = 0;
     return read_chars;
 }
