@@ -244,6 +244,41 @@ static enum utf_error utf_fread_sequence(char8_t *sequence,
     return UTF_OK;
 }
 
+static size_t utf_internal_c16fread(char16_t *restrict c,
+                                    struct utf_file *restrict stream)
+{
+    size_t bytes = fread(&c[0], 1, 2, stream->file);
+
+    if (utf_eof(stream)) {
+        stream->state = bytes == 0 ? UTF_OK : UTF_NOT_ENOUGH_ROOM;
+        return 0;
+    }
+
+    if (UTF_IS_TRAIL_SURROGATE(c[0])) {
+        stream->state = UTF_INVALID_LEAD;
+        return 0;
+    }
+
+    if (UTF_IS_LEAD_SURROGATE(c[0])) {
+        fread(&c[1], 1, 2, stream->file);
+
+        if (utf_eof(stream)) {
+            stream->state = UTF_NOT_ENOUGH_ROOM;
+            return 0;
+        }
+        if (!UTF_IS_TRAIL_SURROGATE(c[1])) {
+            stream->state = UTF_INVALID_TRAIL;
+            return 0;
+        }
+
+        stream->state = UTF_OK;
+        return 2;
+    }
+
+    stream->state = UTF_OK;
+    return 1;
+}
+
 // TODO: refactor internal logic
 uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
 {
@@ -324,6 +359,34 @@ static size_t utf_internal_u8fread(char8_t *restrict buf,
     }
 
     stream->state = stat;
+    *buf = 0;
+    return read_chars;
+}
+
+static size_t utf_internal_u16fread(char16_t *restrict buf,
+                                    size_t count,
+                                    struct utf_file *restrict stream)
+{
+    if (buf    == NULL ||
+        count  == 0    ||
+        stream == NULL)
+        return 0;
+
+    size_t read_chars = 0;
+
+    while (count-- > 0) {
+        char16_t c[2];
+        size_t len;
+
+        len = utf_internal_c16fread(c, stream);
+        if (stream->state != UTF_OK || len == 0)
+            break;
+
+        memcpy(buf, c, len * 2);
+        buf += len;
+        ++read_chars;
+    }
+
     *buf = 0;
     return read_chars;
 }
