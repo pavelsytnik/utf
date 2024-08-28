@@ -25,6 +25,14 @@
 #define UTF_IS_VALID_CODEPOINT(a) \
     ((a) <= UTF_CODEPOINT_MAX && !UTF_IS_SURROGATE(a))
 
+#define UTF_U8_SZ(i)  ((i) * 4 + 1)
+#define UTF_U16_SZ(i) ((i) * 4 + 2)
+#define UTF_U32_SZ(i) ((i) * 4 + 4)
+
+#define UTF_U8_ARRSZ(i)  ((i) * 4 + 1)
+#define UTF_U16_ARRSZ(i) ((i) * 2 + 1)
+#define UTF_U32_ARRSZ(i) ((i) + 1)
+
 /* Compatible with the corresponding
  * type definitions of <uchar.h>
  */
