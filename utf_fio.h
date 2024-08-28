@@ -40,14 +40,18 @@ FILE *utf_c_file(const struct utf_file *stream);
 enum utf_error utf_ferror(const struct utf_file *stream);
 bool utf_eof(const struct utf_file *stream);
 
-char8_t *utf_u8fread(char8_t *buf, size_t count, FILE *stream);
-int utf_u8getc(char8_t *bytes, FILE *stream);
+size_t utf_u8fread(char8_t *restrict buf,
+                   size_t count,
+                   struct utf_file *restrict stream);
+size_t utf_u16fread(char16_t *restrict buf,
+                    size_t count,
+                    struct utf_file *restrict stream);
+size_t utf_u32fread(char32_t *restrict buf,
+                    size_t count,
+                    struct utf_file *restrict stream);
 
 uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err);
-size_t utf_u8fread_s(char8_t *buf,
-                     size_t count,
-                     FILE *stream,
-                     enum utf_error *err);
+int utf_u8getc(char8_t *bytes, FILE *stream);
 
 bool utf_u8fread_bom(FILE *stream);
 
