@@ -53,6 +53,4 @@ size_t utf_u32fread(char32_t *restrict buf,
 uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err);
 int utf_u8getc(char8_t *bytes, FILE *stream);
 
-bool utf_u8fread_bom(FILE *stream);
-
 #endif /* UTF_FIO_H */

@@ -28,6 +28,19 @@ struct utf_file {
     FILE *file;
 };
 
+static bool utf_internal_fread_bom(struct utf_file *stream)
+{
+    char32_t sym[UTF_U32_ARRSZ(1)];
+    utf_u32fread(sym, 1, stream);
+
+    if (sym[0] == 0xFEFF)
+        return true;
+
+    rewind(stream->file);
+    stream->state = UTF_OK;
+    return false;
+}
+
 static const char *utf_mode_str(enum utf_file_mode mode)
 {
     switch (mode) {
@@ -75,6 +88,9 @@ struct utf_file *utf_fopen(const char *filename,
     file->encoding = encoding;
     file->state = UTF_OK;
     file->file = c_file;
+
+    if (encoding != UTF_U8)
+        utf_internal_fread_bom(file);
 
     return file;
 }
@@ -391,17 +407,6 @@ static size_t utf_internal_u32fread(char32_t *restrict buf,
 
     *buf = 0;
     return read_chars;
-}
-
-bool utf_u8fread_bom(FILE *stream)
-{
-    if (getc(stream) == 0xEF &&
-        getc(stream) == 0xBB &&
-        getc(stream) == 0xBF)
-        return true;
-
-    rewind(stream);
-    return false;
 }
 
 size_t utf_u8fread(char8_t *restrict buf,
