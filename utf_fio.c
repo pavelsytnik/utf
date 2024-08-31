@@ -78,30 +78,17 @@ static const char *utf_mode_str(enum utf_file_mode mode)
 {
     switch (mode) {
         case UTF_READ:
-            return "r";
+            return "rb";
         case UTF_WRITE:
-            return "w";
+            return "wb";
         case UTF_WRITE | UTF_APPEND:
         case UTF_APPEND:
-            return "a";
-        case UTF_READ | UTF_APPEND:
-            return "r+";
-        case UTF_READ | UTF_WRITE:
-            return "w+";
-        case UTF_READ | UTF_WRITE | UTF_APPEND:
-            return "a+";
-        case UTF_READ | UTF_BINARY:
-            return "rb";
-        case UTF_WRITE | UTF_BINARY:
-            return "wb";
-        case UTF_WRITE | UTF_APPEND | UTF_BINARY:
-        case UTF_APPEND | UTF_BINARY:
             return "ab";
-        case UTF_READ | UTF_APPEND | UTF_BINARY:
+        case UTF_READ | UTF_APPEND:
             return "r+b";
-        case UTF_READ | UTF_WRITE | UTF_BINARY:
+        case UTF_READ | UTF_WRITE:
             return "w+b";
-        case UTF_READ | UTF_WRITE | UTF_APPEND | UTF_BINARY:
+        case UTF_READ | UTF_WRITE | UTF_APPEND:
             return "a+b";
         default:
             return NULL;

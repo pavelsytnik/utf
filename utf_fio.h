@@ -26,8 +26,7 @@ enum utf_file_encoding {
 enum utf_file_mode {
     UTF_READ   = 0x01,
     UTF_WRITE  = 0x02,
-    UTF_APPEND = 0x04,
-    UTF_BINARY = 0x08
+    UTF_APPEND = 0x04
 };
 
 struct utf_file *utf_fopen(const char *filename,
