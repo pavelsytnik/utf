@@ -5,39 +5,36 @@
 
 #define UTF_CODEPOINT_MAX 0x10FFFFu
 
-#define UTF_LEAD_SURROGATE_MIN 0xD800u
-#define UTF_LEAD_SURROGATE_MAX 0xDBFFu
+#define UTF_LEAD_SURROGATE_MIN  0xD800u
+#define UTF_LEAD_SURROGATE_MAX  0xDBFFu
 #define UTF_TRAIL_SURROGATE_MIN 0xDC00u
 #define UTF_TRAIL_SURROGATE_MAX 0xDFFFu
 
-#define UTF_IS_TRAIL(a) \
+#define utf_is_c8trail(a) \
     (((a) & 0xC0) == 0x80)
 
-#define UTF_IS_LEAD_SURROGATE(a) \
+#define utf_is_lead_surrogate(a) \
     ((a) >= UTF_LEAD_SURROGATE_MIN && (a) <= UTF_LEAD_SURROGATE_MAX)
 
-#define UTF_IS_TRAIL_SURROGATE(a) \
+#define utf_is_trail_surrogate(a) \
     ((a) >= UTF_TRAIL_SURROGATE_MIN && (a) <= UTF_TRAIL_SURROGATE_MAX)
 
-#define UTF_IS_SURROGATE(a) \
+#define utf_is_surrogate(a) \
     ((a) >= UTF_LEAD_SURROGATE_MIN && (a) <= UTF_TRAIL_SURROGATE_MAX)
 
-#define UTF_IS_VALID_CODEPOINT(a) \
-    ((a) <= UTF_CODEPOINT_MAX && !UTF_IS_SURROGATE(a))
+#define utf_is_valid_codepoint(a) \
+    ((a) <= UTF_CODEPOINT_MAX && !utf_is_surrogate(a))
 
-#define UTF_U8_SZ(i)  ((i) * 4 + 1)
-#define UTF_U16_SZ(i) ((i) * 4 + 2)
-#define UTF_U32_SZ(i) ((i) * 4 + 4)
+#define utf_s8sz(i)  ((i) * 4 + 1)
+#define utf_s16sz(i) ((i) * 4 + 2)
+#define utf_s32sz(i) ((i) * 4 + 4)
 
-#define UTF_U8_ARRSZ(i)  ((i) * 4 + 1)
-#define UTF_U16_ARRSZ(i) ((i) * 2 + 1)
-#define UTF_U32_ARRSZ(i) ((i) + 1)
+#define utf_s8arrsz(i)  ((i) * 4 + 1)
+#define utf_s16arrsz(i) ((i) * 2 + 1)
+#define utf_s32arrsz(i) ((i) + 1)
 
-/* Compatible with the corresponding
- * type definitions of <uchar.h>
- */
-typedef unsigned char char8_t;
-typedef uint_least16_t char16_t;
-typedef uint_least32_t char32_t;
+typedef unsigned char utf_c8;
+typedef uint_least16_t utf_c16;
+typedef uint_least32_t utf_c32;
 
 #endif /* UTF_CHAR_H */

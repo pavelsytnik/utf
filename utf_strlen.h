@@ -5,12 +5,12 @@
 
 #include <stddef.h>
 
-size_t utf_str8len(const char8_t *s);
-size_t utf_str16len(const char16_t *s);
-size_t utf_str32len(const char32_t *s);
+size_t utf_s8len(const utf_c8 *s);
+size_t utf_s16len(const utf_c16 *s);
+size_t utf_s32len(const utf_c32 *s);
 
-size_t utf_str8len_s(const char8_t *s, size_t n);
-size_t utf_str16len_s(const char16_t *s, size_t n);
-size_t utf_str32len_s(const char32_t *s, size_t n);
+size_t utf_s8len_s(const utf_c8 *s, size_t n);
+size_t utf_s16len_s(const utf_c16 *s, size_t n);
+size_t utf_s32len_s(const utf_c32 *s, size_t n);
 
 #endif /* UTF_STRLEN_H */

@@ -6,16 +6,16 @@
 
 #include <stddef.h>
 
-void utf_str8to16(char16_t *restrict dst, const char8_t *restrict src);
-void utf_str16to8(char8_t *restrict dst, const char16_t *restrict src);
-void utf_str8to32(char32_t *restrict dst, const char8_t *restrict src);
-void utf_str32to8(char8_t *restrict dst, const char32_t *restrict src);
-void utf_str32to16(char16_t *restrict dst, const char32_t *restrict src);
-void utf_str16to32(char32_t *restrict dst, const char16_t *restrict src);
+void utf_s8to16(utf_c16 *restrict dst, const utf_c8 *restrict src);
+void utf_s16to8(utf_c8 *restrict dst, const utf_c16 *restrict src);
+void utf_s8to32(utf_c32 *restrict dst, const utf_c8 *restrict src);
+void utf_s32to8(utf_c8 *restrict dst, const utf_c32 *restrict src);
+void utf_s32to16(utf_c16 *restrict dst, const utf_c32 *restrict src);
+void utf_s16to32(utf_c32 *restrict dst, const utf_c16 *restrict src);
 
-const char8_t *utf_str8to32_s(char32_t *restrict dst,
-                              const char8_t *restrict src,
-                              size_t n,
-                              enum utf_error *stat);
+const utf_c8 *utf_s8to32_s(utf_c32 *restrict dst,
+                           const utf_c8 *restrict src,
+                           size_t n,
+                           enum utf_error *stat);
 
 #endif /* UTF_STRCONV_H */

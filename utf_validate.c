@@ -23,7 +23,7 @@
      ((c) & 0xF8) == 0xF0 ? 4 : \
                             0  )
 
-static enum utf_error utf_decode_sequence(const char8_t **strp,
+static enum utf_error utf_decode_sequence(const utf_c8 **strp,
                                           uint32_t *codepoint,
                                           int length)
 {
@@ -69,7 +69,7 @@ static enum utf_error utf_decode_sequence(const char8_t **strp,
     return UTF_OK;
 }
 
-enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint)
+enum utf_error utf_u8next(const utf_c8 **strp, uint32_t *codepoint)
 {
     if (**strp == 0)
         return UTF_NOT_ENOUGH_ROOM;
@@ -83,7 +83,7 @@ enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint)
 
     if (UTF_IS_OVERLONG_SEQUENCE(cp, len))
         err = UTF_OVERLONG_SEQUENCE;
-    else if (!UTF_IS_VALID_CODEPOINT(cp))
+    else if (!utf_is_valid_codepoint(cp))
         err = UTF_INVALID_CODEPOINT;
 
     if (err != UTF_OK) {
@@ -97,21 +97,21 @@ enum utf_error utf_u8next(const char8_t **strp, uint32_t *codepoint)
     return UTF_OK;
 }
 
-enum utf_error utf_u16next(const char16_t **strp, uint32_t *codepoint)
+enum utf_error utf_u16next(const utf_c16 **strp, uint32_t *codepoint)
 {
     if (**strp == 0)
         return UTF_NOT_ENOUGH_ROOM;
 
     uint32_t cp = 0;
 
-    if (!UTF_IS_SURROGATE(**strp)) {
+    if (!utf_is_surrogate(**strp)) {
         cp = **strp;
-    } else if (UTF_IS_LEAD_SURROGATE(**strp)) {
+    } else if (utf_is_lead_surrogate(**strp)) {
         cp = **strp - UTF_LEAD_SURROGATE_MIN << 10;
 
         if (*++*strp == 0)
             return UTF_NOT_ENOUGH_ROOM;
-        if (!UTF_IS_TRAIL_SURROGATE(**strp))
+        if (!utf_is_trail_surrogate(**strp))
             return UTF_INVALID_TRAIL;
 
         cp |= **strp - UTF_TRAIL_SURROGATE_MIN;

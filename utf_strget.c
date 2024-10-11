@@ -43,9 +43,9 @@ static uint32_t utf_char8to32(uint32_t u8c)
 }
 
 // Also unsafe code
-char32_t utf_str8get(const char8_t *s, size_t i)
+utf_c32 utf_s8get(const utf_c8 *s, size_t i)
 {
-    char32_t ch = 0;
+    utf_c32 ch = 0;
 
     while (i-- > 0)
         s += utf_u8seqlen(*s);
@@ -58,7 +58,7 @@ char32_t utf_str8get(const char8_t *s, size_t i)
 }
 
 // TODO: append check for null-terminated character
-char8_t *utf_str8at(const char8_t *s, size_t i)
+utf_c8 *utf_s8at(const utf_c8 *s, size_t i)
 {
     while (i-- > 0)
         s += utf_u8seqlen(*s);

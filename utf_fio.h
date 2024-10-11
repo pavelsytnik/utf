@@ -39,17 +39,17 @@ FILE *utf_c_file(const struct utf_file *stream);
 enum utf_error utf_ferror(const struct utf_file *stream);
 bool utf_eof(const struct utf_file *stream);
 
-size_t utf_u8fread(char8_t *restrict buf,
+size_t utf_u8fread(utf_c8 *restrict buf,
                    size_t count,
                    struct utf_file *restrict stream);
-size_t utf_u16fread(char16_t *restrict buf,
+size_t utf_u16fread(utf_c16 *restrict buf,
                     size_t count,
                     struct utf_file *restrict stream);
-size_t utf_u32fread(char32_t *restrict buf,
+size_t utf_u32fread(utf_c32 *restrict buf,
                     size_t count,
                     struct utf_file *restrict stream);
 
 uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err);
-int utf_u8getc(char8_t *bytes, FILE *stream);
+int utf_u8getc(utf_c8 *bytes, FILE *stream);
 
 #endif /* UTF_FIO_H */
