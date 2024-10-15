@@ -3,19 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define UTF_NEXT_TRAIL_OR_FAIL(c, stream) do { \
-    if ((*(c) = getc(stream)) == EOF)          \
-        return UTF_NOT_ENOUGH_ROOM;            \
-    if ((*(c) & 0xC0) != 0x80)                 \
-        return UTF_INVALID_TRAIL;              \
-} while (0)
+#define UTF_NEXT_TRAIL_OR_FAIL(c, stream) \
+    if ((*(c) = getc(stream)) == EOF)     \
+        return UTF_NOT_ENOUGH_ROOM;       \
+    if ((*(c) & 0xC0) != 0x80)            \
+        return UTF_INVALID_TRAIL;
 
-#define UTF_IS_OVERLONG_SEQUENCE(codepoint, length) \
+#define utf_is_overlong_sentence(codepoint, length) \
     ((codepoint) <= 0x7F   && (length) > 1 ||       \
      (codepoint) <= 0x7FF  && (length) > 2 ||       \
      (codepoint) <= 0xFFFF && (length) > 3 )
 
-#define UTF_SEQUENCE_LENGTH(c)  \
+#define utf_sequence_length(c)  \
     (((c) & 0x80) == 0x00 ? 1 : \
      ((c) & 0xE0) == 0xC0 ? 2 : \
      ((c) & 0xF0) == 0xE0 ? 3 : \
@@ -23,13 +22,13 @@
                             0 )
 
 struct utf_file {
+    FILE *file;
     enum utf_file_encoding encoding;
     enum utf_error state;
-    FILE *file;
     enum utf_endianness endianness;
 };
 
-static bool utf_internal_u8fread_bom(struct utf_file *stream)
+static bool utf_u8fread_bom(struct utf_file *stream)
 {
     if (getc(stream->file) == 0xEF &&
         getc(stream->file) == 0xBB &&
@@ -40,8 +39,7 @@ static bool utf_internal_u8fread_bom(struct utf_file *stream)
     return false;
 }
 
-static enum utf_endianness
-utf_internal_endianness_from_bom(struct utf_file *stream)
+static enum utf_endianness utf_fread_bom(struct utf_file *stream)
 {
     uint8_t bytes[4] = { 0, 0, 0, 0 };
 
@@ -99,27 +97,30 @@ struct utf_file *utf_fopen(const char *filename,
                            enum utf_file_mode mode,
                            enum utf_file_encoding encoding)
 {
-    struct utf_file *file = malloc(sizeof(struct utf_file));
+    struct utf_file *file;
+    FILE *c_file;
+
+    file = malloc(sizeof(struct utf_file));
     if (!file) return NULL;
 
-    FILE *c_file = fopen(filename, utf_mode_str(mode));
+    c_file = fopen(filename, utf_mode_str(mode));
     if (!c_file) { free(file); return NULL; }
 
+    file->file = c_file;
     file->encoding = encoding;
     file->state = UTF_OK;
-    file->file = c_file;
 
     if (encoding == UTF_U16 || encoding == UTF_U32)
-        file->endianness = utf_internal_endianness_from_bom(file);
-    else if (encoding == UTF_U16LE || encoding == UTF_U32LE)
+        file->endianness = utf_fread_bom(file);
+    else if (encoding == UTF_U16_LE || encoding == UTF_U32_LE)
         file->endianness = UTF_LITTLE_ENDIAN;
-    else if (encoding == UTF_U16BE || encoding == UTF_U32BE)
+    else if (encoding == UTF_U16_BE || encoding == UTF_U32_BE)
         file->endianness = UTF_BIG_ENDIAN;
     else
         file->endianness = utf_receive_endianness();
 
-    if (encoding == UTF_U8BOM)
-        utf_internal_u8fread_bom(file);
+    if (encoding == UTF_U8_SIG)
+        utf_u8fread_bom(file);
 
     return file;
 }
@@ -146,37 +147,38 @@ enum utf_error utf_ferror(const struct utf_file *stream)
     return stream->state;
 }
 
-int utf_u8getc(utf_c8 *bytes, FILE *stream)
-{
-    int c, contbytes, nbytes = 0;
-
-    if ((c = getc(stream)) == EOF)
-        return 0;
-
-    bytes[0] = (utf_c8) c;
-    nbytes++;
-
-    if ((c & 0x80) == 0x00)
-        contbytes = 0;
-    else if ((c & 0xE0) == 0xC0)
-        contbytes = 1;
-    else if ((c & 0xF0) == 0xE0)
-        contbytes = 2;
-    else if ((c & 0xF8) == 0xF0)
-        contbytes = 3;
-    else
-        return -1;
-
-    while (contbytes--) {
-        if ((c = getc(stream)) == EOF)
-            return -nbytes;
-        bytes[nbytes++] = (utf_c8) c;
-        if ((c & 0xC0) != 0x80)
-            return -nbytes;
-    }
-
-    return nbytes;
-}
+/* TODO: use the algorithm somewhere else or permanently delete */
+//int utf_u8getc(utf_c8 *bytes, FILE *stream)
+//{
+//    int c, contbytes, nbytes = 0;
+//
+//    if ((c = getc(stream)) == EOF)
+//        return 0;
+//
+//    bytes[0] = (utf_c8) c;
+//    nbytes++;
+//
+//    if ((c & 0x80) == 0x00)
+//        contbytes = 0;
+//    else if ((c & 0xE0) == 0xC0)
+//        contbytes = 1;
+//    else if ((c & 0xF0) == 0xE0)
+//        contbytes = 2;
+//    else if ((c & 0xF8) == 0xF0)
+//        contbytes = 3;
+//    else
+//        return -1;
+//
+//    while (contbytes--) {
+//        if ((c = getc(stream)) == EOF)
+//            return -nbytes;
+//        bytes[nbytes++] = (utf_c8) c;
+//        if ((c & 0xC0) != 0x80)
+//            return -nbytes;
+//    }
+//
+//    return nbytes;
+//}
 
 static enum utf_error utf_fread_sequence(utf_c8 *sequence,
                                          size_t *length,
@@ -190,7 +192,7 @@ static enum utf_error utf_fread_sequence(utf_c8 *sequence,
         return UTF_OK;
     }
 
-    switch (*length = UTF_SEQUENCE_LENGTH(c)) {
+    switch (*length = utf_sequence_length(c)) {
     case 1:
         sequence[0] = c;
         codepoint |= c;
@@ -200,7 +202,7 @@ static enum utf_error utf_fread_sequence(utf_c8 *sequence,
         sequence[0] = c;
         codepoint |= (c & 0x1F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[1] = c;
         codepoint |= (c & 0x3F);
 
@@ -209,11 +211,11 @@ static enum utf_error utf_fread_sequence(utf_c8 *sequence,
         sequence[0] = c;
         codepoint |= (c & 0x0F) << 12;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[1] = c;
         codepoint |= (c & 0x3F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[2] = c;
         codepoint |= (c & 0x3F);
 
@@ -222,15 +224,15 @@ static enum utf_error utf_fread_sequence(utf_c8 *sequence,
         sequence[0] = c;
         codepoint |= (c & 0x07) << 18;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[1] = c;
         codepoint |= (c & 0x3F) << 12;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[2] = c;
         codepoint |= (c & 0x3F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(&c, stream);
+        UTF_NEXT_TRAIL_OR_FAIL(&c, stream)
         sequence[3] = c;
         codepoint |= (c & 0x3F);
 
@@ -241,7 +243,7 @@ static enum utf_error utf_fread_sequence(utf_c8 *sequence,
 
     if (!utf_is_valid_codepoint(codepoint))
         return UTF_INVALID_CODEPOINT;
-    if (UTF_IS_OVERLONG_SEQUENCE(codepoint, *length))
+    if (utf_is_overlong_sentence(codepoint, *length))
         return UTF_OVERLONG_SEQUENCE;
 
     return UTF_OK;
@@ -311,57 +313,57 @@ static size_t utf_internal_c32fread(utf_c32 *restrict c,
     return 1;
 }
 
-// TODO: refactor internal logic
-uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err)
+utf_c32 utf_fgetc8(struct utf_file *stream)
 {
-    int c;
-    uint32_t cp;
+    int i, c;
+    utf_c32 cp;
     size_t len;
 
-    if ((c = getc(stream)) == EOF) {
-        *err = UTF_OK;
+    if ((c = getc(stream->file)) == EOF) {
+        stream->state = UTF_OK;
         return UTF_EOF;
     }
 
-    switch (len = UTF_SEQUENCE_LENGTH(c)) {
-    case 1:
-        cp = c;
-        break;
-    case 2:
-        cp = c & 0x1F;
-        break;
-    case 3:
-        cp = c & 0x0F;
-        break;
-    case 4:
-        cp = c & 0x07;
-    default:
-        *err = UTF_INVALID_LEAD;
+    if ((c & 0x80) == 0x00) {
+        stream->state = UTF_OK;
+        return (utf_c32)c;
+    } else if ((c & 0xE0) == 0xC0) {
+        len = 2;
+        cp = (utf_c32)(c & 0x1F);
+    } else if ((c & 0xF0) == 0xE0) {
+        len = 3;
+        cp = (utf_c32)(c & 0x0F);
+    } else if ((c & 0xF8) == 0xF0) {
+        len = 4;
+        cp = (utf_c32)(c & 0x07);
+    } else {
+        stream->state = UTF_INVALID_LEAD;
         return UTF_EOF;
     }
 
-    while (--len) {
-        if ((c = getc(stream)) == EOF) {
-            *err = UTF_NOT_ENOUGH_ROOM;
+    for (i = 1; i < len; i++) {
+        if ((c = getc(stream->file)) == EOF) {
+            stream->state = UTF_NOT_ENOUGH_ROOM;
             return UTF_EOF;
         }
         if ((c & 0xC0) != 0x80) {
-            *err = UTF_INVALID_TRAIL;
+            stream->state = UTF_INVALID_TRAIL;
             return UTF_EOF;
         }
-        cp = cp << 6 | c & 0x3F;
+
+        cp = cp << 6 | (utf_c32)(c & 0x3F);
     }
 
     if (!utf_is_valid_codepoint(cp)) {
-        *err = UTF_INVALID_CODEPOINT;
+        stream->state = UTF_INVALID_CODEPOINT;
         return UTF_EOF;
     }
-    if (UTF_IS_OVERLONG_SEQUENCE(cp, len)) {
-        *err = UTF_OVERLONG_SEQUENCE;
+    if (utf_is_overlong_sentence(cp, len)) {
+        stream->state = UTF_OVERLONG_SEQUENCE;
         return UTF_EOF;
     }
 
-    *err = UTF_OK;
+    stream->state = UTF_OK;
     return cp;
 }
 
@@ -457,19 +459,19 @@ size_t utf_u8fread(utf_c8 *restrict buf,
 
     switch (stream->encoding) {
     case UTF_U8:
-    case UTF_U8BOM:
+    case UTF_U8_SIG:
         read = utf_internal_u8fread(buf, count, stream);
         break;
     case UTF_U16:
-    case UTF_U16LE:
-    case UTF_U16BE:
+    case UTF_U16_LE:
+    case UTF_U16_BE:
         chars = malloc(utf_s16sz(count));
         read = utf_internal_u16fread(chars, count, stream);
         utf_s16to8(buf, chars);
         break;
     case UTF_U32:
-    case UTF_U32LE:
-    case UTF_U32BE:
+    case UTF_U32_LE:
+    case UTF_U32_BE:
         chars = malloc(utf_s32sz(count));
         read = utf_internal_u32fread(chars, count, stream);
         utf_s32to8(buf, chars);
@@ -490,19 +492,19 @@ size_t utf_u16fread(utf_c16 *restrict buf,
 
     switch (stream->encoding) {
     case UTF_U8:
-    case UTF_U8BOM:
+    case UTF_U8_SIG:
         chars = malloc(utf_s8sz(count));
         read = utf_internal_u8fread(chars, count, stream);
         utf_s8to16(buf, chars);
         break;
     case UTF_U16:
-    case UTF_U16LE:
-    case UTF_U16BE:
+    case UTF_U16_LE:
+    case UTF_U16_BE:
         read = utf_internal_u16fread(buf, count, stream);
         break;
     case UTF_U32:
-    case UTF_U32LE:
-    case UTF_U32BE:
+    case UTF_U32_LE:
+    case UTF_U32_BE:
         chars = malloc(utf_s32sz(count));
         read = utf_internal_u32fread(chars, count, stream);
         utf_s32to16(buf, chars);
@@ -523,21 +525,21 @@ size_t utf_u32fread(utf_c32 *restrict buf,
 
     switch (stream->encoding) {
     case UTF_U8:
-    case UTF_U8BOM:
+    case UTF_U8_SIG:
         chars = malloc(utf_s8sz(count));
         read = utf_internal_u8fread(chars, count, stream);
         utf_s8to32(buf, chars);
         break;
     case UTF_U16:
-    case UTF_U16LE:
-    case UTF_U16BE:
+    case UTF_U16_LE:
+    case UTF_U16_BE:
         chars = malloc(utf_s16sz(count));
         read = utf_internal_u16fread(chars, count, stream);
         utf_s16to32(buf, chars);
         break;
     case UTF_U32:
-    case UTF_U32LE:
-    case UTF_U32BE:
+    case UTF_U32_LE:
+    case UTF_U32_BE:
         read = utf_internal_u32fread(buf, count, stream);
         break;
     }

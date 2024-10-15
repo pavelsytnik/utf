@@ -13,20 +13,22 @@
 struct utf_file;
 
 enum utf_file_encoding {
+    UTF_FILE_ENCODING_UNKNOWN = 0,
     UTF_U8,
-    UTF_U8BOM,
+    UTF_U8_SIG,
     UTF_U16,
-    UTF_U16LE,
-    UTF_U16BE,
+    UTF_U16_LE,
+    UTF_U16_BE,
     UTF_U32,
-    UTF_U32LE,
-    UTF_U32BE
+    UTF_U32_LE,
+    UTF_U32_BE
 };
 
 enum utf_file_mode {
-    UTF_READ   = 0x01,
-    UTF_WRITE  = 0x02,
-    UTF_APPEND = 0x04
+    UTF_FILE_MODE_UNKNOWN = 0x00,
+    UTF_READ              = 0x01,
+    UTF_WRITE             = 0x02,
+    UTF_APPEND            = 0x04
 };
 
 struct utf_file *utf_fopen(const char *filename,
@@ -49,7 +51,7 @@ size_t utf_u32fread(utf_c32 *restrict buf,
                     size_t count,
                     struct utf_file *restrict stream);
 
-uint32_t utf_u8getc_s(FILE *stream, enum utf_error *err);
-int utf_u8getc(utf_c8 *bytes, FILE *stream);
+utf_c32 utf_fgetc8(struct utf_file *stream);
+//int utf_u8getc(utf_c8 *bytes, FILE *stream);
 
 #endif /* UTF_FIO_H */
