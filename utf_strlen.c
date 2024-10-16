@@ -1,20 +1,20 @@
-#include "utf.h"
+#include "utf_strlen.h"
 
-#define NULLCHAR 0
+#define UTF_NULL_ 0
 
-size_t utf_s8len(const utf_c8 *s)
+size_t utf_8_strlen(const utf_c8 *s)
 {
     size_t len = 0;
-    while (*s++ != NULLCHAR)
-        if (!utf_is_c8trail(*s))
+    while (*s++ != UTF_NULL_)
+        if (!utf_8_is_trail(*s))
             len++;
     return len;
 }
 
-size_t utf_s16len(const utf_c16 *s)
+size_t utf_16_strlen(const utf_c16 *s)
 {
     size_t len = 0;
-    while (*s++ != NULLCHAR) {
+    while (*s++ != UTF_NULL_) {
         len++;
         if (utf_is_surrogate(*s))
             s++;
@@ -22,22 +22,22 @@ size_t utf_s16len(const utf_c16 *s)
     return len;
 }
 
-size_t utf_s32len(const utf_c32 *s)
+size_t utf_32_strlen(const utf_c32 *s)
 {
     size_t len = 0;
-    while (*s++ != NULLCHAR)
+    while (*s++ != UTF_NULL_)
         len++;
     return len;
 }
 
-size_t utf_s8len_s(const utf_c8 *s, size_t n)
+size_t utf_8_strlen_s(const utf_c8 *s, size_t n)
 {
     if (s == NULL)
         return 0;
 
     size_t len = 0;
-    while (*s != NULLCHAR && n > 0) {
-        if (!utf_is_c8trail(*s))
+    while (*s != UTF_NULL_ && n > 0) {
+        if (!utf_8_is_trail(*s))
             len++;
         s++;
         n--;
@@ -46,13 +46,13 @@ size_t utf_s8len_s(const utf_c8 *s, size_t n)
     return len;
 }
 
-size_t utf_s16len_s(const utf_c16 *s, size_t n)
+size_t utf_16_strlen_s(const utf_c16 *s, size_t n)
 {
     if (s == NULL)
         return 0;
 
     size_t len = 0;
-    while (*s != NULLCHAR && n > 0) {
+    while (*s != UTF_NULL_ && n > 0) {
         if (utf_is_surrogate(*s))
             s++;
         len++;
@@ -63,13 +63,13 @@ size_t utf_s16len_s(const utf_c16 *s, size_t n)
     return len;
 }
 
-size_t utf_s32len_s(const utf_c32 *s, size_t n)
+size_t utf_32_strlen_s(const utf_c32 *s, size_t n)
 {
     if (s == NULL)
         return 0;
 
     size_t len = 0;
-    while (*s != NULLCHAR && n > 0) {
+    while (*s != UTF_NULL_ && n > 0) {
         len++;
         s++;
         n--;

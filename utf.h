@@ -1,5 +1,5 @@
-#ifndef UTF_H
-#define UTF_H
+#ifndef utf_h_
+#define utf_h_
 
 #include "utf_byteorder.h"
 #include "utf_char.h"
@@ -10,4 +10,4 @@
 #include "utf_strlen.h"
 #include "utf_validate.h"
 
-#endif /* UTF_H */
+#endif /* !defined(utf_h_) */

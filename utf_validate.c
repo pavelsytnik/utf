@@ -1,31 +1,19 @@
-// For internal usage
-// Adapted Nemanja Trifunovic's code
-// https://github.com/nemtrif/utfcpp
+#include "utf_validate.h"
 
-#include "utf.h"
+#define UTF_NEXT_TRAIL_OR_FAIL_(str) \
+    if (*++(str) == 0)               \
+        return UTF_TRUNCATED;        \
+    if ((*(str) & 0xC0) != 0x80)     \
+        return UTF_INVALID_TRAIL;    \
 
-#define UTF_NEXT_TRAIL_OR_FAIL(str) do { \
-    if (*++(str) == 0) \
-        return UTF_NOT_ENOUGH_ROOM; \
-    if ((*(str) & 0xC0) != 0x80) \
-        return UTF_INVALID_TRAIL; \
-} while (0)
-
-#define UTF_IS_OVERLONG_SEQUENCE(codepoint, length) \
-    ((codepoint) <= 0x7F   && (length) > 1 || \
-     (codepoint) <= 0x7FF  && (length) > 2 || \
+#define utf_8_is_overlong_sequence_(codepoint, length) \
+    ((codepoint) <= 0x7F   && (length) > 1 ||          \
+     (codepoint) <= 0x7FF  && (length) > 2 ||          \
      (codepoint) <= 0xFFFF && (length) > 3 )
 
-#define UTF_SEQUENCE_LENGTH(c) \
-    (((c) & 0x80) == 0x00 ? 1 : \
-     ((c) & 0xE0) == 0xC0 ? 2 : \
-     ((c) & 0xF0) == 0xE0 ? 3 : \
-     ((c) & 0xF8) == 0xF0 ? 4 : \
-                            0  )
-
-static enum utf_error utf_decode_sequence(const utf_c8 **strp,
-                                          uint32_t *codepoint,
-                                          int length)
+static utf_error utf_8_decode_(const utf_c8 **strp,
+                               uint32_t *codepoint,
+                               int length)
 {
     switch (length) {
     case 1:
@@ -35,30 +23,30 @@ static enum utf_error utf_decode_sequence(const utf_c8 **strp,
     case 2:
         *codepoint = (**strp & 0x1F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= **strp & 0x3F;
 
         break;
     case 3:
         *codepoint = (**strp & 0x0F) << 12;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= (**strp & 0x3F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= **strp & 0x3F;
 
         break;
     case 4:
         *codepoint = (**strp & 0x07) << 18;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= (**strp & 0x3F) << 12;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= (**strp & 0x3F) << 6;
 
-        UTF_NEXT_TRAIL_OR_FAIL(*strp);
+        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
         *codepoint |= **strp & 0x3F;
 
         break;
@@ -69,22 +57,22 @@ static enum utf_error utf_decode_sequence(const utf_c8 **strp,
     return UTF_OK;
 }
 
-enum utf_error utf_u8next(const utf_c8 **strp, uint32_t *codepoint)
+utf_error utf_8_next(const utf_c8 **strp, uint32_t *codepoint)
 {
     if (**strp == 0)
-        return UTF_NOT_ENOUGH_ROOM;
+        return UTF_TRUNCATED;
 
     uint32_t cp = 0;
-    int len = UTF_SEQUENCE_LENGTH(**strp);
-    enum utf_error err = utf_decode_sequence(strp, &cp, len);
+    int len = utf_8_length_from_lead(**strp);
+    utf_error err = utf_8_decode_(strp, &cp, len);
 
     if (err != UTF_OK)
         return err;
 
-    if (UTF_IS_OVERLONG_SEQUENCE(cp, len))
+    if (utf_8_is_overlong_sequence_(cp, len))
         err = UTF_OVERLONG_SEQUENCE;
-    else if (!utf_is_valid_codepoint(cp))
-        err = UTF_INVALID_CODEPOINT;
+    else if (!utf_is_valid_code_point(cp))
+        err = UTF_INVALID_CODE_POINT;
 
     if (err != UTF_OK) {
         *strp -= len - 1;
@@ -97,10 +85,10 @@ enum utf_error utf_u8next(const utf_c8 **strp, uint32_t *codepoint)
     return UTF_OK;
 }
 
-enum utf_error utf_u16next(const utf_c16 **strp, uint32_t *codepoint)
+utf_error utf_16_next(const utf_c16 **strp, uint32_t *codepoint)
 {
     if (**strp == 0)
-        return UTF_NOT_ENOUGH_ROOM;
+        return UTF_TRUNCATED;
 
     uint32_t cp = 0;
 
@@ -110,7 +98,7 @@ enum utf_error utf_u16next(const utf_c16 **strp, uint32_t *codepoint)
         cp = **strp - UTF_LEAD_SURROGATE_MIN << 10;
 
         if (*++*strp == 0)
-            return UTF_NOT_ENOUGH_ROOM;
+            return UTF_TRUNCATED;
         if (!utf_is_trail_surrogate(**strp))
             return UTF_INVALID_TRAIL;
 

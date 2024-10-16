@@ -1,12 +1,10 @@
-#ifndef UTF_VALIDATE_H
-#define UTF_VALIDATE_H
+#ifndef utf_validate_h_
+#define utf_validate_h_
 
 #include "utf_char.h"
 #include "utf_error.h"
 
-#include <stdint.h>
+utf_error utf_8_next(const utf_c8 **strp, uint32_t *codepoint);
+utf_error utf_16_next(const utf_c16 **strp, uint32_t *codepoint);
 
-enum utf_error utf_u8next(const utf_c8 **strp, uint32_t *codepoint);
-enum utf_error utf_u16next(const utf_c16 **strp, uint32_t *codepoint);
-
-#endif /* UTF_VALIDATE_H */
+#endif /* !defined(utf_validate_h_) */

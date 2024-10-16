@@ -1,21 +1,7 @@
-#include "utf.h"
-
-static int utf_u8seqlen(char c)
-{
-    if ((c & 0x80) == 0x00)
-        return 1;
-    else if ((c & 0xE0) == 0xC0)
-        return 2;
-    else if ((c & 0xF0) == 0xE0)
-        return 3;
-    else if ((c & 0xF8) == 0xF0)
-        return 4;
-    else
-        return 0;
-}
+#include "utf_strget.h"
 
 // Maybe temporary, maybe not
-static uint32_t utf_char8to32(uint32_t u8c)
+static uint32_t utf_ch_8_to_32_(uint32_t u8c)
 {
     if ((u8c & 0x80) == 0x00) {
         return u8c;
@@ -43,25 +29,25 @@ static uint32_t utf_char8to32(uint32_t u8c)
 }
 
 // Also unsafe code
-utf_c32 utf_s8get(const utf_c8 *s, size_t i)
+utf_c32 utf_8_strget(const utf_c8 *s, size_t i)
 {
     utf_c32 ch = 0;
 
     while (i-- > 0)
-        s += utf_u8seqlen(*s);
+        s += utf_8_length_from_lead(*s);
 
-    int len = utf_u8seqlen(*s);
+    int len = utf_8_length_from_lead(*s);
     for (int i = 0; i < len; i++)
         ch = ch << 8 | *(s + i) & 0xFF;
 
-    return utf_char8to32(ch);
+    return utf_ch_8_to_32_(ch);
 }
 
 // TODO: append check for null-terminated character
-utf_c8 *utf_s8at(const utf_c8 *s, size_t i)
+utf_c8 *utf_8_strat(const utf_c8 *s, size_t i)
 {
     while (i-- > 0)
-        s += utf_u8seqlen(*s);
+        s += utf_8_length_from_lead(*s);
 
     return s;
 }

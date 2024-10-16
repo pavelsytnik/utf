@@ -1,17 +1,17 @@
-#include "utf.h"
+#include "utf_byteorder.h"
 
-uint16_t utf_swapbytes_uint16(uint16_t n)
+utf_c16 utf_16_byteswap(utf_c16 n)
 {
     return n << 8 | n >> 8;
 }
 
-uint32_t utf_swapbytes_uint32(uint32_t n)
+utf_c32 utf_32_byteswap(utf_c32 n)
 {
     n = n << 8 & 0xFF00FF00 | n >> 8 & 0x00FF00FF;
     return n << 16 | n >> 16;
 }
 
-enum utf_endianness utf_receive_endianness(void)
+utf_endianness utf_system_endianness(void)
 {
     uint16_t word = 0x0001;
     uint8_t octet = *(uint8_t *) &word;

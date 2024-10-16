@@ -1,6 +1,6 @@
-#include "utf.h"
+#include "utf_strconv.h"
 
-void utf_s8to16(utf_c16 *restrict dst, const utf_c8 *restrict src)
+void utf_8_to_16(utf_c16 *restrict dst, const utf_c8 *restrict src)
 {
     while (*src != 0) {
         uint32_t c32 = 0;
@@ -36,7 +36,7 @@ void utf_s8to16(utf_c16 *restrict dst, const utf_c8 *restrict src)
     *dst = 0;
 }
 
-void utf_s8to32(utf_c32 *restrict dst, const utf_c8 *restrict src)
+void utf_8_to_32(utf_c32 *restrict dst, const utf_c8 *restrict src)
 {
     while (*src != 0) {
         utf_c32 ch = 0;
@@ -62,7 +62,7 @@ void utf_s8to32(utf_c32 *restrict dst, const utf_c8 *restrict src)
     *dst = 0;
 }
 
-void utf_s16to8(utf_c8 *restrict dst, const utf_c16 *restrict src)
+void utf_16_to_8(utf_c8 *restrict dst, const utf_c16 *restrict src)
 {
     while (*src != 0) {
         uint32_t c32 = 0;
@@ -98,7 +98,7 @@ void utf_s16to8(utf_c8 *restrict dst, const utf_c16 *restrict src)
     *dst = 0;
 }
 
-void utf_s16to32(utf_c32 *restrict dst, const utf_c16 *restrict src)
+void utf_16_to_32(utf_c32 *restrict dst, const utf_c16 *restrict src)
 {
     while (*src != 0) {
         utf_c32 ch = 0;
@@ -116,7 +116,7 @@ void utf_s16to32(utf_c32 *restrict dst, const utf_c16 *restrict src)
     *dst = 0;
 }
 
-void utf_s32to8(utf_c8 *restrict dst, const utf_c32 *restrict src)
+void utf_32_to_8(utf_c8 *restrict dst, const utf_c32 *restrict src)
 {
     while (*src != 0) {
         if (*src < 0x80) {
@@ -141,7 +141,7 @@ void utf_s32to8(utf_c8 *restrict dst, const utf_c32 *restrict src)
     *dst = 0;
 }
 
-void utf_s32to16(utf_c16 *restrict dst, const utf_c32 *restrict src)
+void utf_32_to_16(utf_c16 *restrict dst, const utf_c32 *restrict src)
 {
     while (*src != 0) {
         if (*src < 0x10000) {
@@ -158,42 +158,71 @@ void utf_s32to16(utf_c16 *restrict dst, const utf_c32 *restrict src)
     *dst = 0;
 }
 
-#define UTF_GENERATE_BODY_FOR_STRTO32FROM(i)            \
-    if (dst == NULL || src == NULL) {                   \
-        *stat = UTF_NOT_ENOUGH_ROOM;                    \
-        return NULL;                                    \
-    }                                                   \
-                                                        \
-    *stat = UTF_OK;                                     \
-                                                        \
-    if (stat == NULL)                                   \
-        return NULL;                                    \
-                                                        \
-    while (*src != 0 && n-- > 0) {                      \
-        uint32_t cp;                                    \
-        enum utf_error err = utf_u##i##next(&src, &cp); \
-        if (err != UTF_OK) {                            \
-            *stat = err;                                \
-            break;                                      \
-        }                                               \
-        *dst++ = cp;                                    \
-    }                                                   \
-                                                        \
-    *dst = 0;                                           \
+#define UTF_GENERATE_BODY_FOR_STRTO32FROM_(i)            \
+    if (dst == NULL || src == NULL) {                    \
+        *stat = UTF_TRUNCATED;                           \
+        return NULL;                                     \
+    }                                                    \
+                                                         \
+    *stat = UTF_OK;                                      \
+                                                         \
+    if (stat == NULL)                                    \
+        return NULL;                                     \
+                                                         \
+    while (*src != 0 && n-- > 0) {                       \
+        uint32_t cp;                                     \
+        utf_error err = utf_##i##_next(&src, &cp);       \
+        if (err != UTF_OK) {                             \
+            *stat = err;                                 \
+            break;                                       \
+        }                                                \
+        *dst++ = cp;                                     \
+    }                                                    \
+                                                         \
+    *dst = 0;                                            \
     return src;
 
-const utf_c8 *utf_s8to32_s(utf_c32 *restrict dst,
-                           const utf_c8 *restrict src,
-                           size_t n,
-                           enum utf_error *stat)
+const utf_c8 *utf_8_to_32_s(utf_c32 *restrict dst,
+                            const utf_c8 *restrict src,
+                            size_t n,
+                            utf_error *stat)
 {
-    UTF_GENERATE_BODY_FOR_STRTO32FROM(8);
+    UTF_GENERATE_BODY_FOR_STRTO32FROM_(8);
 }
 
-const utf_c16 *utf_s16to32_s(utf_c32 *restrict dst,
-                             const utf_c16 *restrict src,
-                             size_t n,
-                             enum utf_error *stat)
+const utf_c16 *utf_16_to_32_s(utf_c32 *restrict dst,
+                              const utf_c16 *restrict src,
+                              size_t n,
+                              utf_error *stat)
 {
-    UTF_GENERATE_BODY_FOR_STRTO32FROM(16);
+    UTF_GENERATE_BODY_FOR_STRTO32FROM_(16);
 }
+
+//static const utf_c8 *utf_strto32_s(utf_c32 *restrict dst,
+//                                   const utf_c8 *restrict src,
+//                                   size_t n,
+//                                   enum utf_error *stat)
+//{
+//    if (dst == NULL || src == NULL) {
+//        *stat = UTF_TRUNCATED;
+//        return NULL;
+//    }
+//
+//    *stat = UTF_OK;
+//
+//    if (stat == NULL)
+//        return NULL;
+//
+//    while (*src != 0 && n-- > 0) {
+//        uint32_t cp;
+//        enum utf_error err = utf_8_next(&src, &cp);
+//        if (err != UTF_OK) {
+//            *stat = err;
+//            break;
+//        }
+//        *dst++ = cp;
+//    }
+//
+//    *dst = 0;
+//    return src;
+//}

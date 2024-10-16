@@ -1,16 +1,18 @@
-#ifndef UTF_BYTEORDER_H
-#define UTF_BYTEORDER_H
+#ifndef utf_byteorder_h_
+#define utf_byteorder_h_
 
-#include <stdint.h>
+#include "utf_char.h"
+
+typedef enum utf_endianness utf_endianness;
 
 enum utf_endianness {
-    UTF_LITTLE_ENDIAN = 1,
-    UTF_BIG_ENDIAN = 2
+    UTF_BIG_ENDIAN    = 1,
+    UTF_LITTLE_ENDIAN = 2
 };
 
-enum utf_endianness utf_receive_endianness(void);
+utf_endianness utf_system_endianness(void);
 
-uint16_t utf_swapbytes_uint16(uint16_t n);
-uint32_t utf_swapbytes_uint32(uint32_t n);
+utf_c16 utf_16_byteswap(utf_c16 n);
+utf_c32 utf_32_byteswap(utf_c32 n);
 
-#endif /* UTF_BYTEORDER_H */
+#endif /* !defined(utf_byteorder_h_) */
