@@ -41,15 +41,7 @@ FILE *utf_c_file(const utf_file *stream);
 utf_error utf_ferror(const utf_file *stream);
 bool utf_feof(const utf_file *stream);
 
-size_t utf_8_fread(utf_c8 *restrict buf,
-                   size_t count,
-                   utf_file *restrict stream);
-size_t utf_16_fread(utf_c16 *restrict buf,
-                    size_t count,
-                    utf_file *restrict stream);
-size_t utf_32_fread(utf_c32 *restrict buf,
-                    size_t count,
-                    utf_file *restrict stream);
+size_t utf_fread(void *restrict buf, size_t count, utf_file *restrict stream);
 
 utf_c32 utf_8_fgetc(utf_file *stream);
 

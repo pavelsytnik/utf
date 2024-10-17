@@ -280,11 +280,6 @@ static size_t utf_8_fread_(utf_c8 *restrict buf,
                            size_t count,
                            utf_file *restrict stream)
 {
-    if (buf    == NULL ||
-        count  == 0    ||
-        stream == NULL)
-        return 0;
-
     size_t read_chars = 0;
 
     while (count-- > 0) {
@@ -307,11 +302,6 @@ static size_t utf_16_fread_(utf_c16 *restrict buf,
                             size_t count,
                             utf_file *restrict stream)
 {
-    if (buf    == NULL ||
-        count  == 0    ||
-        stream == NULL)
-        return 0;
-
     size_t read_chars = 0;
 
     while (count-- > 0) {
@@ -335,11 +325,6 @@ static size_t utf_32_fread_(utf_c32 *restrict buf,
                             size_t count,
                             utf_file *restrict stream)
 {
-    if (buf    == NULL ||
-        count  == 0    ||
-        stream == NULL)
-        return 0;
-
     size_t read_chars = 0;
 
     while (count-- > 0) {
@@ -356,101 +341,22 @@ static size_t utf_32_fread_(utf_c32 *restrict buf,
     return read_chars;
 }
 
-size_t utf_8_fread(utf_c8 *restrict buf,
-                   size_t count,
-                   utf_file *restrict stream)
+size_t utf_fread(void *restrict buf, size_t count, utf_file *restrict stream)
 {
-    size_t read = 0;
-    void *chars = NULL;
+    typedef size_t (*fread_ptr)(void *restrict, size_t, utf_file *restrict);
+    static fread_ptr fread_table[] = {
+        (fread_ptr)utf_8_fread_,
+        (fread_ptr)utf_8_fread_,
+        (fread_ptr)utf_16_fread_,
+        (fread_ptr)utf_16_fread_,
+        (fread_ptr)utf_16_fread_,
+        (fread_ptr)utf_32_fread_,
+        (fread_ptr)utf_32_fread_,
+        (fread_ptr)utf_32_fread_
+    };
 
-    switch (stream->encoding) {
-    case UTF_8:
-    case UTF_8_SIG:
-        read = utf_8_fread_(buf, count, stream);
-        break;
-    case UTF_16:
-    case UTF_16_LE:
-    case UTF_16_BE:
-        chars = malloc(utf_16_sz(count));
-        read = utf_16_fread_(chars, count, stream);
-        utf_16_to_8(buf, chars);
-        break;
-    case UTF_32:
-    case UTF_32_LE:
-    case UTF_32_BE:
-        chars = malloc(utf_32_sz(count));
-        read = utf_32_fread_(chars, count, stream);
-        utf_32_to_8(buf, chars);
-        break;
-    }
+    if (buf == NULL || count == 0 || stream == NULL)
+        return 0;
 
-    if (chars != NULL)
-        free(chars);
-    return read;
-}
-
-size_t utf_16_fread(utf_c16 *restrict buf,
-                    size_t count,
-                    utf_file *restrict stream)
-{
-    size_t read = 0;
-    void *chars = NULL;
-
-    switch (stream->encoding) {
-    case UTF_8:
-    case UTF_8_SIG:
-        chars = malloc(utf_8_sz(count));
-        read = utf_8_fread_(chars, count, stream);
-        utf_8_to_16(buf, chars);
-        break;
-    case UTF_16:
-    case UTF_16_LE:
-    case UTF_16_BE:
-        read = utf_16_fread_(buf, count, stream);
-        break;
-    case UTF_32:
-    case UTF_32_LE:
-    case UTF_32_BE:
-        chars = malloc(utf_32_sz(count));
-        read = utf_32_fread_(chars, count, stream);
-        utf_32_to_16(buf, chars);
-        break;
-    }
-
-    if (chars != NULL)
-        free(chars);
-    return read;
-}
-
-size_t utf_32_fread(utf_c32 *restrict buf,
-                    size_t count,
-                    utf_file *restrict stream)
-{
-    size_t read = 0;
-    void *chars = NULL;
-
-    switch (stream->encoding) {
-    case UTF_8:
-    case UTF_8_SIG:
-        chars = malloc(utf_8_sz(count));
-        read = utf_8_fread_(chars, count, stream);
-        utf_8_to_32(buf, chars);
-        break;
-    case UTF_16:
-    case UTF_16_LE:
-    case UTF_16_BE:
-        chars = malloc(utf_16_sz(count));
-        read = utf_16_fread_(chars, count, stream);
-        utf_16_to_32(buf, chars);
-        break;
-    case UTF_32:
-    case UTF_32_LE:
-    case UTF_32_BE:
-        read = utf_32_fread_(buf, count, stream);
-        break;
-    }
-
-    if (chars != NULL)
-        free(chars);
-    return read;
+    return fread_table[stream->encoding](buf, count, stream);
 }
