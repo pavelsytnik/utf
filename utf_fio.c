@@ -360,3 +360,71 @@ size_t utf_fread(void *restrict buf, size_t count, utf_file *restrict stream)
 
     return fread_table[stream->encoding](buf, count, stream);
 }
+
+static void utf_8_fputc_(utf_file *stream, utf_c32 code)
+{
+    if (code < 0x80) {
+        putc(code,                     stream->file);
+    } else if (code < 0x800) {
+        putc(code >> 6         | 0xC0, stream->file);
+        putc(code       & 0x3F | 0x80, stream->file);
+    } else if (code < 0x10000) {
+        putc(code >> 12        | 0xE0, stream->file);
+        putc(code >> 6  & 0x3F | 0x80, stream->file);
+        putc(code       & 0x3F | 0x80, stream->file);
+    } else if (code < 0x110000) {
+        putc(code >> 18        | 0xF0, stream->file);
+        putc(code >> 12 & 0x3F | 0x80, stream->file);
+        putc(code >> 6  & 0x3F | 0x80, stream->file);
+        putc(code       & 0x3F | 0x80, stream->file);
+    }
+}
+
+static utf_error utf_8_strnext_(const utf_c8 *str, size_t *dif)
+{
+    int i;
+
+    if (utf_8_is_lead_1(*str)) {
+        *dif = 1;
+        return UTF_OK;
+    }
+
+    if (utf_8_is_lead_2(*str))
+        *dif = 2;
+    else if (utf_8_is_lead_3(*str))
+        *dif = 3;
+    else if (utf_8_is_lead_4(*str))
+        *dif = 4;
+    else
+        return UTF_INVALID_LEAD;
+
+    for (i = 1; i < *dif; i++)
+        if (!utf_8_is_trail(*(str + i)))
+            return UTF_INVALID_TRAIL;
+
+    if (utf_8_is_invalid_code_point(str))
+        return UTF_INVALID_CODE_POINT;
+    if (utf_8_is_overlong_sequence(str))
+        return UTF_OVERLONG_SEQUENCE;
+
+    return UTF_OK;
+}
+
+static
+size_t utf_8_fwrite_(utf_file *stream, const utf_c8 *buffer, size_t count)
+{
+    size_t n = 0;
+
+    while (count-- > 0) {
+        size_t len;
+
+        if ((stream->state = utf_8_strnext_(buffer, &len)) != UTF_OK)
+            break;
+
+        fwrite(buffer, 1, len, stream->file);
+        buffer += len;
+        n++;
+    }
+
+    return n;
+}
