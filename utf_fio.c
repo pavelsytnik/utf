@@ -26,6 +26,8 @@ static size_t utf_32_fnext_(utf_file *restrict stream,
                             utf_c32 *restrict c);
 
 static utf_c32 utf_8_fgetc_(utf_file *stream);
+static utf_c32 utf_16_fgetc_(utf_file *stream);
+static utf_c32 utf_32_fgetc_(utf_file *stream);
 
 static size_t utf_8_fread_(utf_file *stream,
                            utf_c8 *restrict buf,
@@ -41,6 +43,8 @@ static utf_error utf_8_strnext_(const utf_c8 *restrict str,
                                 size_t *restrict dif);
 
 static void utf_8_fputc_(utf_file *stream, utf_c32 code);
+static void utf_16_fputc_(utf_file *stream, utf_c32 code);
+static void utf_32_fputc_(utf_file *stream, utf_c32 code);
 
 static size_t utf_8_fwrite_(utf_file *restrict stream,
                             const utf_c8 *restrict buffer,
@@ -98,6 +102,44 @@ FILE *utf_c_file(const utf_file *stream)
 utf_error utf_ferror(const utf_file *stream)
 {
     return stream->state;
+}
+
+utf_c32 utf_fgetc(utf_file *stream)
+{
+    typedef utf_c32 (*fgetc_ptr)(utf_file *);
+    static fgetc_ptr fgetc_table[] = {
+        utf_8_fgetc_,
+        utf_8_fgetc_,
+        utf_16_fgetc_,
+        utf_16_fgetc_,
+        utf_16_fgetc_,
+        utf_32_fgetc_,
+        utf_32_fgetc_,
+        utf_32_fgetc_
+    };
+
+    return fgetc_table[stream->encoding](stream);
+}
+
+utf_c32 utf_fputc(utf_file *stream, utf_c32 code)
+{
+    typedef void (*fputc_ptr)(utf_file *, utf_c32);
+    static fputc_ptr fputc_table[] = {
+        utf_8_fputc_,
+        utf_8_fputc_,
+        utf_16_fputc_,
+        utf_16_fputc_,
+        utf_16_fputc_,
+        utf_32_fputc_,
+        utf_32_fputc_,
+        utf_32_fputc_
+    };
+
+    if (!utf_is_valid_code_point(code))
+        return UTF_EOF;
+
+    fputc_table[stream->encoding](stream, code);
+    return code;
 }
 
 size_t utf_fread(utf_file *restrict stream, void *restrict buf, size_t count)
@@ -302,7 +344,7 @@ static utf_c32 utf_8_fgetc_(utf_file *stream)
     size_t count;
     utf_c32 cp = 0;
 
-    if ((count = utf_8_fnext_(buf, stream)) == 0)
+    if ((count = utf_8_fnext_(stream, buf)) == 0)
         return UTF_EOF;
 
     switch (count) {
@@ -327,6 +369,33 @@ static utf_c32 utf_8_fgetc_(utf_file *stream)
     }
 
     return cp;
+}
+
+static utf_c32 utf_16_fgetc_(utf_file *stream)
+{
+    utf_c16 buf[2];
+    size_t count;
+    utf_c32 cp = 0;
+
+    if ((count = utf_16_fnext_(stream, buf)) == 0)
+        return UTF_EOF;
+
+    if (count == 1) {
+        cp |= buf[0];
+    } else if (count == 2) {
+        cp |= buf[0] - 0xD800 << 10;
+        cp |= buf[1] - 0xDC00;
+        cp += 0x10000;
+    }
+
+    return cp;
+}
+
+static utf_c32 utf_32_fgetc_(utf_file *stream)
+{
+    utf_c32 cp;
+
+    return utf_32_fnext_(stream, &cp) ? cp : UTF_EOF;
 }
 
 static size_t utf_8_fread_(utf_file *stream,
@@ -441,6 +510,50 @@ static void utf_8_fputc_(utf_file *stream, utf_c32 code)
         putc(code >> 12 & 0x3F | 0x80, stream->file);
         putc(code >> 6  & 0x3F | 0x80, stream->file);
         putc(code       & 0x3F | 0x80, stream->file);
+    }
+}
+
+static void utf_16_fputc_(utf_file *stream, utf_c32 code)
+{
+    if (code < 0x10000) {
+        if (stream->endianness == UTF_BIG_ENDIAN) {
+            putc(code >> 8, stream->file);
+            putc(code     , stream->file);
+        } else {
+            putc(code     , stream->file);
+            putc(code >> 8, stream->file);
+        }
+    } else if (code < 0x110000) {
+        utf_c32 tmp = code - 0x10000;
+        utf_c16 high = (tmp >> 10)   + 0xD800;
+        utf_c16 low  = (tmp & 0x3FF) + 0xDC00;
+
+        if (stream->endianness == UTF_BIG_ENDIAN) {
+            putc(high >> 8, stream->file);
+            putc(high     , stream->file);
+            putc(low  >> 8, stream->file);
+            putc(low      , stream->file);
+        } else {
+            putc(low      , stream->file);
+            putc(low  >> 8, stream->file);
+            putc(high     , stream->file);
+            putc(high >> 8, stream->file);
+        }
+    }
+}
+
+static void utf_32_fputc_(utf_file *stream, utf_c32 code)
+{
+    if (stream->endianness == UTF_BIG_ENDIAN) {
+        putc(code >> 24, stream->file);
+        putc(code >> 16, stream->file);
+        putc(code >>  8, stream->file);
+        putc(code      , stream->file);
+    } else {
+        putc(code      , stream->file);
+        putc(code >>  8, stream->file);
+        putc(code >> 16, stream->file);
+        putc(code >> 24, stream->file);
     }
 }
 

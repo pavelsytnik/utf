@@ -41,6 +41,9 @@ FILE *utf_c_file(const utf_file *stream);
 utf_error utf_ferror(const utf_file *stream);
 bool utf_feof(const utf_file *stream);
 
+utf_c32 utf_fgetc(utf_file *stream);
+utf_c32 utf_fputc(utf_file *stream, utf_c32 code);
+
 size_t utf_fread(utf_file *restrict stream, void *restrict buf, size_t count);
 
 #endif /* !defined(utf_fio_h_) */
