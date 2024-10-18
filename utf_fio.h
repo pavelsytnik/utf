@@ -43,6 +43,4 @@ bool utf_feof(const utf_file *stream);
 
 size_t utf_fread(void *restrict buf, size_t count, utf_file *restrict stream);
 
-utf_c32 utf_8_fgetc(utf_file *stream);
-
 #endif /* !defined(utf_fio_h_) */
