@@ -1,6 +1,6 @@
 #include "utf_strconv.h"
 
-void utf_8_to_16(utf_c16 *restrict dst, const utf_c8 *restrict src)
+void utf_8_to_16(const utf_c8 *restrict src, utf_c16 *restrict dst)
 {
     while (*src != 0) {
         uint32_t c32 = 0;
@@ -36,7 +36,7 @@ void utf_8_to_16(utf_c16 *restrict dst, const utf_c8 *restrict src)
     *dst = 0;
 }
 
-void utf_8_to_32(utf_c32 *restrict dst, const utf_c8 *restrict src)
+void utf_8_to_32(const utf_c8 *restrict src, utf_c32 *restrict dst)
 {
     while (*src != 0) {
         utf_c32 ch = 0;
@@ -62,7 +62,7 @@ void utf_8_to_32(utf_c32 *restrict dst, const utf_c8 *restrict src)
     *dst = 0;
 }
 
-void utf_16_to_8(utf_c8 *restrict dst, const utf_c16 *restrict src)
+void utf_16_to_8(const utf_c16 *restrict src, utf_c8 *restrict dst)
 {
     while (*src != 0) {
         uint32_t c32 = 0;
@@ -98,7 +98,7 @@ void utf_16_to_8(utf_c8 *restrict dst, const utf_c16 *restrict src)
     *dst = 0;
 }
 
-void utf_16_to_32(utf_c32 *restrict dst, const utf_c16 *restrict src)
+void utf_16_to_32(const utf_c16 *restrict src, utf_c32 *restrict dst)
 {
     while (*src != 0) {
         utf_c32 ch = 0;
@@ -116,7 +116,7 @@ void utf_16_to_32(utf_c32 *restrict dst, const utf_c16 *restrict src)
     *dst = 0;
 }
 
-void utf_32_to_8(utf_c8 *restrict dst, const utf_c32 *restrict src)
+void utf_32_to_8(const utf_c32 *restrict src, utf_c8 *restrict dst)
 {
     while (*src != 0) {
         if (*src < 0x80) {
@@ -141,7 +141,7 @@ void utf_32_to_8(utf_c8 *restrict dst, const utf_c32 *restrict src)
     *dst = 0;
 }
 
-void utf_32_to_16(utf_c16 *restrict dst, const utf_c32 *restrict src)
+void utf_32_to_16(const utf_c32 *restrict src, utf_c16 *restrict dst)
 {
     while (*src != 0) {
         if (*src < 0x10000) {
@@ -182,16 +182,16 @@ void utf_32_to_16(utf_c16 *restrict dst, const utf_c32 *restrict src)
     *dst = 0;                                            \
     return src;
 
-const utf_c8 *utf_8_to_32_s(utf_c32 *restrict dst,
-                            const utf_c8 *restrict src,
+const utf_c8 *utf_8_to_32_s(const utf_c8 *restrict src,
+                            utf_c32 *restrict dst,
                             size_t n,
                             utf_error *stat)
 {
     UTF_GENERATE_BODY_FOR_STRTO32FROM_(8);
 }
 
-const utf_c16 *utf_16_to_32_s(utf_c32 *restrict dst,
-                              const utf_c16 *restrict src,
+const utf_c16 *utf_16_to_32_s(const utf_c16 *restrict src,
+                              utf_c32 *restrict dst,
                               size_t n,
                               utf_error *stat)
 {
