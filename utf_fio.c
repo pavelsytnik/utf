@@ -18,12 +18,12 @@ static const char *utf_mode_str_(utf_file_mode mode);
 static bool utf_8_fread_bom_(utf_file *stream);
 static utf_endianness utf_fread_bom_(utf_file *stream);
 
-static size_t utf_8_fnext_(utf_file *restrict stream,
-                           utf_c8 *restrict c);
-static size_t utf_16_fnext_(utf_file *restrict stream,
-                            utf_c16 *restrict c);
-static size_t utf_32_fnext_(utf_file *restrict stream,
-                            utf_c32 *restrict c);
+static size_t utf_8_fread_next_(utf_file *restrict stream,
+                                utf_c8 *restrict c);
+static size_t utf_16_fread_next_(utf_file *restrict stream,
+                                 utf_c16 *restrict c);
+static size_t utf_32_fread_next_(utf_file *restrict stream,
+                                 utf_c32 *restrict c);
 
 static utf_c32 utf_8_fgetc_(utf_file *stream);
 static utf_c32 utf_16_fgetc_(utf_file *stream);
@@ -39,16 +39,21 @@ static size_t utf_32_fread_(utf_file *stream,
                             utf_c32 *restrict buf,
                             size_t count);
 
-static utf_error utf_8_strnext_(const utf_c8 *restrict str,
-                                size_t *restrict dif);
+static size_t utf_char_8_to_16_(const utf_c8 *restrict src,
+                                utf_c16 *restrict dst);
+static void utf_char_8_to_32_(const utf_c8 *restrict src,
+                              utf_c32 *restrict dst);
+
+static void utf_8_fwrite_next_(utf_file *restrict stream,
+                               const utf_c8 *restrict c);
+static void utf_16_fwrite_next_(utf_file *restrict stream,
+                                const utf_c8 *restrict c);
+static void utf_32_fwrite_next_(utf_file *restrict stream,
+                                const utf_c8 *restrict c);
 
 static void utf_8_fputc_(utf_file *stream, utf_c32 code);
 static void utf_16_fputc_(utf_file *stream, utf_c32 code);
 static void utf_32_fputc_(utf_file *stream, utf_c32 code);
-
-static size_t utf_8_fwrite_(utf_file *restrict stream,
-                            const utf_c8 *restrict buffer,
-                            size_t count);
 
 utf_file *utf_fopen(const char *filename,
                     utf_file_mode mode,
@@ -144,7 +149,7 @@ utf_c32 utf_fputc(utf_file *stream, utf_c32 code)
 
 size_t utf_fread(utf_file *restrict stream, void *restrict buf, size_t count)
 {
-    typedef size_t(*fread_ptr)(utf_file *, void *, size_t);
+    typedef size_t (*fread_ptr)(utf_file *, void *, size_t);
     static fread_ptr fread_table[] = {
         (fread_ptr)utf_8_fread_,
         (fread_ptr)utf_8_fread_,
@@ -156,10 +161,41 @@ size_t utf_fread(utf_file *restrict stream, void *restrict buf, size_t count)
         (fread_ptr)utf_32_fread_
     };
 
-    if (buf == NULL || count == 0 || stream == NULL)
+    if (!stream || !buf || count == 0)
         return 0;
 
     return fread_table[stream->encoding](stream, buf, count);
+}
+
+size_t utf_fwrite(utf_file *restrict stream,
+                  const utf_c8 *restrict buf,
+                  size_t count)
+{
+    typedef void (*fwrite_next_ptr)(utf_file *, const utf_c8 *);
+    static fwrite_next_ptr fwrite_next_table[] = {
+        utf_8_fwrite_next_,
+        utf_8_fwrite_next_,
+        utf_16_fwrite_next_,
+        utf_16_fwrite_next_,
+        utf_16_fwrite_next_,
+        utf_32_fwrite_next_,
+        utf_32_fwrite_next_,
+        utf_32_fwrite_next_
+    };
+
+    if (!stream || !buf || count == 0)
+        return 0;
+
+    size_t n = 0;
+
+    while (count-- > 0) {
+        fwrite_next_table[stream->encoding](stream, buf);
+
+        buf += utf_8_length_from_lead(*buf);
+        n++;
+    }
+
+    return n;
 }
 
 static const char *utf_mode_str_(utf_file_mode mode)
@@ -227,7 +263,8 @@ static utf_endianness utf_fread_bom_(utf_file *stream)
     return utf_system_endianness();
 }
 
-static size_t utf_8_fnext_(utf_file *restrict stream, utf_c8 *restrict sym)
+static size_t utf_8_fread_next_(utf_file *restrict stream,
+                                utf_c8 *restrict sym)
 {
     int i, c;
     size_t len = 0;
@@ -274,8 +311,8 @@ static size_t utf_8_fnext_(utf_file *restrict stream, utf_c8 *restrict sym)
     return len;
 }
 
-static size_t utf_16_fnext_(utf_file *restrict stream,
-                            utf_c16 *restrict c)
+static size_t utf_16_fread_next_(utf_file *restrict stream,
+                                 utf_c16 *restrict c)
 {
     size_t bytes = fread(&c[0], 1, 2, stream->file);
 
@@ -316,8 +353,8 @@ static size_t utf_16_fnext_(utf_file *restrict stream,
     return 1;
 }
 
-static size_t utf_32_fnext_(utf_file *restrict stream,
-                            utf_c32 *restrict c)
+static size_t utf_32_fread_next_(utf_file *restrict stream,
+                                 utf_c32 *restrict c)
 {
     size_t bytes = fread(&c, 1, 4, stream->file);
 
@@ -344,7 +381,7 @@ static utf_c32 utf_8_fgetc_(utf_file *stream)
     size_t count;
     utf_c32 cp = 0;
 
-    if ((count = utf_8_fnext_(stream, buf)) == 0)
+    if ((count = utf_8_fread_next_(stream, buf)) == 0)
         return UTF_EOF;
 
     switch (count) {
@@ -377,7 +414,7 @@ static utf_c32 utf_16_fgetc_(utf_file *stream)
     size_t count;
     utf_c32 cp = 0;
 
-    if ((count = utf_16_fnext_(stream, buf)) == 0)
+    if ((count = utf_16_fread_next_(stream, buf)) == 0)
         return UTF_EOF;
 
     if (count == 1) {
@@ -395,7 +432,7 @@ static utf_c32 utf_32_fgetc_(utf_file *stream)
 {
     utf_c32 cp;
 
-    return utf_32_fnext_(stream, &cp) ? cp : UTF_EOF;
+    return utf_32_fread_next_(stream, &cp) ? cp : UTF_EOF;
 }
 
 static size_t utf_8_fread_(utf_file *stream,
@@ -408,7 +445,7 @@ static size_t utf_8_fread_(utf_file *stream,
         utf_c8 c[4];
         size_t len;
 
-        if ((len = utf_8_fnext_(stream, c)) == 0)
+        if ((len = utf_8_fread_next_(stream, c)) == 0)
             break;
 
         memcpy(buf, c, len);
@@ -430,7 +467,7 @@ static size_t utf_16_fread_(utf_file *stream,
         utf_c16 c[2];
         size_t len;
 
-        len = utf_16_fnext_(stream, c);
+        len = utf_16_fread_next_(stream, c);
         if (stream->state != UTF_OK || len == 0)
             break;
 
@@ -452,7 +489,7 @@ static size_t utf_32_fread_(utf_file *stream,
     while (count-- > 0) {
         utf_c32 c[1];
 
-        if (!utf_32_fnext_(stream, c))
+        if (!utf_32_fread_next_(stream, c))
             break;
 
         *buf++ = c;
@@ -463,35 +500,82 @@ static size_t utf_32_fread_(utf_file *stream,
     return read_chars;
 }
 
-static utf_error utf_8_strnext_(const utf_c8 *restrict str,
-                                size_t *restrict dif)
+static size_t utf_char_8_to_16_(const utf_c8 *restrict src,
+                                utf_c16 *restrict dst)
 {
-    int i;
+    utf_c32 cp = 0;
 
-    if (utf_8_is_lead_1(*str)) {
-        *dif = 1;
-        return UTF_OK;
+    if (utf_8_is_lead_1(*src)) {
+        cp |= (*src);
+    } else if (utf_8_is_lead_2(*src)) {
+        cp |= (*src++ & 0x1F) << 6;
+        cp |= (*src   & 0x3F);
+    } else if (utf_8_is_lead_3(*src)) {
+        cp |= (*src++ & 0x0F) << 12;
+        cp |= (*src++ & 0x3F) << 6;
+        cp |= (*src   & 0x3F);
+    } else if (utf_8_is_lead_4(*src)) {
+        cp |= (*src++ & 0x07) << 18;
+        cp |= (*src++ & 0x3F) << 12;
+        cp |= (*src++ & 0x3F) << 6;
+        cp |= (*src   & 0x3F);
     }
 
-    if (utf_8_is_lead_2(*str))
-        *dif = 2;
-    else if (utf_8_is_lead_3(*str))
-        *dif = 3;
-    else if (utf_8_is_lead_4(*str))
-        *dif = 4;
-    else
-        return UTF_INVALID_LEAD;
+    if (cp >= 0x10000) {
+        cp -= 0x10000;
+        *dst++ = (cp >> 10)   + 0xD800;
+        *dst   = (cp & 0x3FF) + 0xDC00;
+        return 2;
+    }
 
-    for (i = 1; i < *dif; i++)
-        if (!utf_8_is_trail(*(str + i)))
-            return UTF_INVALID_TRAIL;
+    *dst = cp;
+    return 1;
+}
 
-    if (utf_8_is_invalid_code_point(str))
-        return UTF_INVALID_CODE_POINT;
-    if (utf_8_is_overlong_sequence(str))
-        return UTF_OVERLONG_SEQUENCE;
+static void utf_char_8_to_32_(const utf_c8 *restrict src,
+                              utf_c32 *restrict dst)
+{
+    utf_c32 cp = 0;
 
-    return UTF_OK;
+    if ((*src & 0x80) == 0x00) {
+        cp |= (*src);
+    } else if ((*src & 0xE0) == 0xC0) {
+        cp |= (*src++ & 0x1F) << 6;
+        cp |= (*src   & 0x3F);
+    } else if ((*src & 0xF0) == 0xE0) {
+        cp |= (*src++ & 0x0F) << 12;
+        cp |= (*src++ & 0x3F) << 6;
+        cp |= (*src   & 0x3F);
+    } else if ((*src & 0xF8) == 0xF0) {
+        cp |= (*src++ & 0x07) << 18;
+        cp |= (*src++ & 0x3F) << 12;
+        cp |= (*src++ & 0x3F) << 6;
+        cp |= (*src   & 0x3F);
+    }
+
+    *dst = cp;
+}
+
+static void utf_8_fwrite_next_(utf_file *restrict stream,
+                               const utf_c8 *restrict c)
+{
+    fwrite(c, 1, utf_8_length_from_lead(*c), stream->file);
+}
+
+static void utf_16_fwrite_next_(utf_file *restrict stream,
+                                const utf_c8 *restrict c)
+{
+    utf_c16 sym[2];
+    size_t len = utf_char_8_to_16_(c, sym);
+    fwrite(sym, 2, len, stream->file);
+}
+
+static void utf_32_fwrite_next_(utf_file *restrict stream,
+                                const utf_c8 *restrict c)
+{
+    utf_c32 sym;
+    utf_char_8_to_32_(c, &sym);
+    fwrite(&sym, 4, 1, stream->file);
 }
 
 static void utf_8_fputc_(utf_file *stream, utf_c32 code)
@@ -555,24 +639,4 @@ static void utf_32_fputc_(utf_file *stream, utf_c32 code)
         putc(code >> 16, stream->file);
         putc(code >> 24, stream->file);
     }
-}
-
-static size_t utf_8_fwrite_(utf_file *restrict stream,
-                            const utf_c8 *restrict buffer,
-                            size_t count)
-{
-    size_t n = 0;
-
-    while (count-- > 0) {
-        size_t len;
-
-        if ((stream->state = utf_8_strnext_(buffer, &len)) != UTF_OK)
-            break;
-
-        fwrite(buffer, 1, len, stream->file);
-        buffer += len;
-        n++;
-    }
-
-    return n;
 }
