@@ -628,6 +628,11 @@ static void utf_16_fwrite_next_(utf_file *restrict stream,
 {
     utf_c16 sym[2];
     size_t len = utf_char_8_to_16_(c, sym);
+    if (stream->endianness != utf_system_endianness()) {
+        sym[0] = utf_16_byteswap(sym[0]);
+        if (len == 2)
+            sym[1] = utf_16_byteswap(sym[1]);
+    }
     fwrite(sym, 2, len, stream->file);
 }
 
@@ -636,6 +641,8 @@ static void utf_32_fwrite_next_(utf_file *restrict stream,
 {
     utf_c32 sym;
     utf_char_8_to_32_(c, &sym);
+    if (stream->endianness != utf_system_endianness())
+        sym = utf_32_byteswap(sym);
     fwrite(&sym, 4, 1, stream->file);
 }
 
