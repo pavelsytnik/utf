@@ -11,20 +11,27 @@
 #ifdef UTF_INLINE
 
 static UTF_INLINE
-void utf_8_chr_to_32_(const utf_c8 *restrict src, utf_c32 *restrict dst);
+void utf_8_chr_to_32_(const utf_c8  *UTF_RESTRICT src,
+                            utf_c32 *UTF_RESTRICT dst);
 static UTF_INLINE
-void utf_16_chr_to_32_(const utf_c16 *restrict src, utf_c32 *restrict dst);
+void utf_16_chr_to_32_(const utf_c16 *UTF_RESTRICT src,
+                             utf_c32 *UTF_RESTRICT dst);
 static UTF_INLINE
-void utf_8_chr_to_16_(const utf_c8 *restrict src, utf_c16 *restrict dst);
+void utf_8_chr_to_16_(const utf_c8  *UTF_RESTRICT src,
+                            utf_c16 *UTF_RESTRICT dst);
 static UTF_INLINE
-void utf_16_chr_to_8_(const utf_c16 *restrict src, utf_c8 *restrict dst);
+void utf_16_chr_to_8_(const utf_c16 *UTF_RESTRICT src,
+                            utf_c8  *UTF_RESTRICT dst);
 static UTF_INLINE
-void utf_32_chr_to_8_(const utf_c32 *restrict src, utf_c8 *restrict dst);
+void utf_32_chr_to_8_(const utf_c32 *UTF_RESTRICT src,
+                            utf_c8  *UTF_RESTRICT dst);
 static UTF_INLINE
-void utf_32_chr_to_16_(const utf_c32 *restrict src, utf_c16 *restrict dst);
+void utf_32_chr_to_16_(const utf_c32 *UTF_RESTRICT src,
+                             utf_c16 *UTF_RESTRICT dst);
 
 static UTF_INLINE
-void utf_8_chr_to_32_(const utf_c8 *restrict src, utf_c32 *restrict dst)
+void utf_8_chr_to_32_(const utf_c8  *UTF_RESTRICT src,
+                            utf_c32 *UTF_RESTRICT dst)
 {
     if (utf_8_is_lead_1(*src)) {
         *dst = *src;
@@ -44,7 +51,8 @@ void utf_8_chr_to_32_(const utf_c8 *restrict src, utf_c32 *restrict dst)
 }
 
 static UTF_INLINE
-void utf_32_chr_to_8_(const utf_c32 *restrict src, utf_c8 *restrict dst)
+void utf_32_chr_to_8_(const utf_c32 *UTF_RESTRICT src,
+                            utf_c8  *UTF_RESTRICT dst)
 {
     if (*src < 0x80) {
         *dst = *src;
@@ -64,7 +72,8 @@ void utf_32_chr_to_8_(const utf_c32 *restrict src, utf_c8 *restrict dst)
 }
 
 static UTF_INLINE
-void utf_16_chr_to_32_(const utf_c16 *restrict src, utf_c32 *restrict dst)
+void utf_16_chr_to_32_(const utf_c16 *UTF_RESTRICT src,
+                             utf_c32 *UTF_RESTRICT dst)
 {
     if (!utf_is_surrogate(*src)) {
         *dst = *src;
@@ -76,7 +85,8 @@ void utf_16_chr_to_32_(const utf_c16 *restrict src, utf_c32 *restrict dst)
 }
 
 static UTF_INLINE
-void utf_32_chr_to_16_(const utf_c32 *restrict src, utf_c16 *restrict dst)
+void utf_32_chr_to_16_(const utf_c32 *UTF_RESTRICT src,
+                             utf_c16 *UTF_RESTRICT dst)
 {
     if (*src < 0x10000) {
         *dst = *src;
@@ -88,7 +98,8 @@ void utf_32_chr_to_16_(const utf_c32 *restrict src, utf_c16 *restrict dst)
 }
 
 static UTF_INLINE
-void utf_8_chr_to_16_(const utf_c8 *restrict src, utf_c16 *restrict dst)
+void utf_8_chr_to_16_(const utf_c8  *UTF_RESTRICT src,
+                            utf_c16 *UTF_RESTRICT dst)
 {
     utf_c32 cp;
     utf_8_chr_to_32_(src, &cp);
@@ -96,7 +107,8 @@ void utf_8_chr_to_16_(const utf_c8 *restrict src, utf_c16 *restrict dst)
 }
 
 static UTF_INLINE
-void utf_16_chr_to_8_(const utf_c16 *restrict src, utf_c8 *restrict dst)
+void utf_16_chr_to_8_(const utf_c16 *UTF_RESTRICT src,
+                            utf_c8  *UTF_RESTRICT dst)
 {
     utf_c32 cp;
     utf_16_chr_to_32_(src, &cp);

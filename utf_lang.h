@@ -15,4 +15,20 @@
 #    endif
 #endif
 
+#ifdef __cplusplus
+#    if defined __GNUC__ || defined __clang__
+#        define UTF_RESTRICT __restrict__
+#    elif defined _MSC_VER
+#        define UTF_RESTRICT __restrict
+#    else
+#        define UTF_RESTRICT
+#    endif
+#else
+#    if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#        define UTF_RESTRICT restrict
+#    else
+#        define UTF_RESTRICT
+#    endif
+#endif
+
 #endif /* !defined(utf_lang_h_) */

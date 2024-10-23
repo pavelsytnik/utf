@@ -3,6 +3,7 @@
 
 #include "utf_char.h"
 #include "utf_error.h"
+#include "utf_lang.h"
 
 #include <limits.h>
 #include <stdbool.h>
@@ -44,11 +45,11 @@ bool utf_feof(const utf_file *stream);
 utf_c32 utf_fgetc(utf_file *stream);
 utf_c32 utf_fputc(utf_file *stream, utf_c32 code);
 
-size_t utf_fread(utf_file *restrict stream,
-                 utf_c8 *restrict buf,
+size_t utf_fread(utf_file *UTF_RESTRICT stream,
+                 utf_c8 *UTF_RESTRICT buf,
                  size_t count);
-size_t utf_fwrite(utf_file *restrict stream,
-                  const utf_c8 *restrict buf,
+size_t utf_fwrite(utf_file *UTF_RESTRICT stream,
+                  const utf_c8 *UTF_RESTRICT buf,
                   size_t count);
 
 #endif /* !defined(utf_fio_h_) */
