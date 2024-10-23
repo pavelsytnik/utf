@@ -16,7 +16,7 @@ struct utf_file {
 
 static const char *utf_mode_str_(utf_file_mode mode);
 
-static bool utf_8_fread_bom_(utf_file *stream);
+static utf_bool utf_8_fread_bom_(utf_file *stream);
 static utf_endianness utf_fread_bom_(utf_file *stream);
 
 static size_t utf_8_fread_next_raw_(utf_file *UTF_RESTRICT stream,
@@ -26,12 +26,12 @@ static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
 static size_t utf_32_fread_next_raw_(utf_file *UTF_RESTRICT stream,
                                      utf_c32 *UTF_RESTRICT c);
 
-static bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
-                              utf_c8 *UTF_RESTRICT c);
-static bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
-                               utf_c8 *UTF_RESTRICT c);
-static bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
-                               utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
+                                  utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
+                                   utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
+                                   utf_c8 *UTF_RESTRICT c);
 
 static utf_c32 utf_8_fgetc_(utf_file *stream);
 static utf_c32 utf_16_fgetc_(utf_file *stream);
@@ -80,14 +80,14 @@ utf_file *utf_fopen(const char *filename,
     return file;
 }
 
-bool utf_fclose(utf_file *stream)
+utf_bool utf_fclose(utf_file *stream)
 {
-    bool close_state = fclose(stream->file) == 0;
+    utf_bool close_state = fclose(stream->file) == 0;
     free(stream);
     return close_state;
 }
 
-bool utf_feof(const utf_file *stream)
+utf_bool utf_feof(const utf_file *stream)
 {
     return feof(stream->file) != 0;
 }
@@ -144,7 +144,7 @@ size_t utf_fread(utf_file *UTF_RESTRICT stream,
                  utf_c8 *UTF_RESTRICT buf,
                  size_t count)
 {
-    typedef bool (*fread_next_ptr)(utf_file *, utf_c8 *);
+    typedef utf_bool (*fread_next_ptr)(utf_file *, utf_c8 *);
     static fread_next_ptr fread_next_table[] = {
         utf_8_fread_next_,
         utf_8_fread_next_,
@@ -227,15 +227,15 @@ static const char *utf_mode_str_(utf_file_mode mode)
     }
 }
 
-static bool utf_8_fread_bom_(utf_file *stream)
+static utf_bool utf_8_fread_bom_(utf_file *stream)
 {
     if (getc(stream->file) == 0xEF &&
         getc(stream->file) == 0xBB &&
         getc(stream->file) == 0xBF)
-        return true;
+        return utf_true;
 
     rewind(stream);
-    return false;
+    return utf_false;
 }
 
 static utf_endianness utf_fread_bom_(utf_file *stream)
@@ -400,43 +400,43 @@ static size_t utf_32_fread_next_raw_(utf_file *UTF_RESTRICT stream,
     return 1;
 }
 
-static bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
-                              utf_c8 *UTF_RESTRICT buf)
+static utf_bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
+                                  utf_c8 *UTF_RESTRICT buf)
 {
     utf_c8 sym[4];
     size_t len;
 
     if ((len = utf_8_fread_next_raw_(stream, sym)) == 0)
-        return false;
+        return utf_false;
 
     memcpy(buf, sym, len * sizeof(utf_c8));
-    return true;
+    return utf_true;
 }
 
-static bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
-                               utf_c8 *UTF_RESTRICT buf)
+static utf_bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
+                                   utf_c8 *UTF_RESTRICT buf)
 {
     utf_c16 sym[2];
     size_t len;
 
     if ((len = utf_16_fread_next_raw_(stream, sym)) == 0)
-        return false;
+        return utf_false;
 
     utf_16_chr_to_8_(sym, buf);
-    return true;
+    return utf_true;
 }
 
-static bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
-                               utf_c8 *UTF_RESTRICT buf)
+static utf_bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
+                                   utf_c8 *UTF_RESTRICT buf)
 {
     utf_c32 sym;
     size_t len;
 
     if ((len = utf_32_fread_next_raw_(stream, &sym)) == 0)
-        return false;
+        return utf_false;
 
     utf_32_chr_to_8_(&sym, buf);
-    return true;
+    return utf_true;
 }
 
 static utf_c32 utf_8_fgetc_(utf_file *stream)
