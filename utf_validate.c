@@ -12,7 +12,7 @@
      (codepoint) <= 0xFFFF && (length) > 3 )
 
 static utf_error utf_8_decode_(const utf_c8 **strp,
-                               uint32_t *codepoint,
+                               utf_c32 *codepoint,
                                int length)
 {
     switch (length) {
@@ -57,12 +57,12 @@ static utf_error utf_8_decode_(const utf_c8 **strp,
     return UTF_OK;
 }
 
-utf_error utf_8_next(const utf_c8 **strp, uint32_t *codepoint)
+utf_error utf_8_next(const utf_c8 **strp, utf_c32 *codepoint)
 {
     if (**strp == 0)
         return UTF_TRUNCATED;
 
-    uint32_t cp = 0;
+    utf_c32 cp = 0;
     int len = utf_8_length_from_lead(**strp);
     utf_error err = utf_8_decode_(strp, &cp, len);
 
@@ -85,12 +85,12 @@ utf_error utf_8_next(const utf_c8 **strp, uint32_t *codepoint)
     return UTF_OK;
 }
 
-utf_error utf_16_next(const utf_c16 **strp, uint32_t *codepoint)
+utf_error utf_16_next(const utf_c16 **strp, utf_c32 *codepoint)
 {
     if (**strp == 0)
         return UTF_TRUNCATED;
 
-    uint32_t cp = 0;
+    utf_c32 cp = 0;
 
     if (!utf_is_surrogate(**strp)) {
         cp = **strp;

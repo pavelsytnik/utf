@@ -240,7 +240,7 @@ static utf_bool utf_8_fread_bom_(utf_file *stream)
 
 static utf_endianness utf_fread_bom_(utf_file *stream)
 {
-    uint8_t bytes[4] = {0, 0, 0, 0};
+    utf_c8 bytes[4] = {0, 0, 0, 0};
 
     switch (stream->encoding) {
     case UTF_16:

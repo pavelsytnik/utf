@@ -4,7 +4,7 @@
 #include "utf_bool.h"
 #include "utf_lang.h"
 
-#include <stdint.h>
+#include <limits.h>
 
 #define UTF_CODE_POINT_MAX 0x10FFFFu
 
@@ -14,8 +14,12 @@
 #define UTF_TRAIL_SURROGATE_MAX 0xDFFFu
 
 typedef unsigned char utf_c8;
-typedef uint_least16_t utf_c16;
-typedef uint_least32_t utf_c32;
+typedef unsigned short utf_c16;
+#if UINT_MAX >= 0xFFFFFFFF /* 32-bit or larger int */
+    typedef unsigned int utf_c32;
+#else /* too small int => long which is at least 32-bit */
+    typedef unsigned long utf_c32;
+#endif
 
 #ifdef UTF_INLINE
 

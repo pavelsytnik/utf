@@ -1,23 +1,23 @@
 #include "utf_strget.h"
 
 // Maybe temporary, maybe not
-static uint32_t utf_ch_8_to_32_(uint32_t u8c)
+static utf_c32 utf_ch_8_to_32_(utf_c32 u8c)
 {
     if ((u8c & 0x80) == 0x00) {
         return u8c;
     } else if ((u8c >> 8 & 0xE0) == 0xC0) {
-        uint32_t out = 0;
+        utf_c32 out = 0;
         out |= (u8c >> 8 & 0x1F) << 6;
         out |= u8c & 0x3F;
         return out;
     } else if ((u8c >> 16 & 0xF0) == 0xE0) {
-        uint32_t out = 0;
+        utf_c32 out = 0;
         out |= (u8c >> 16 & 0x0F) << 12;
         out |= (u8c >> 8  & 0x3F) << 6;
         out |= u8c & 0x3F;
         return out;
     } else if ((u8c >> 24 & 0xF8) == 0xF0) {
-        uint32_t out = 0;
+        utf_c32 out = 0;
         out |= (u8c >> 24 & 0x07) << 18;
         out |= (u8c >> 16 & 0x3F) << 12;
         out |= (u8c >> 8  & 0x3F) << 6;
