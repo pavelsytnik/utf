@@ -1,115 +1,52 @@
 #include "utf_validate.h"
 
-#define UTF_NEXT_TRAIL_OR_FAIL_(str) \
-    if (*++(str) == 0)               \
-        return UTF_TRUNCATED;        \
-    if ((*(str) & 0xC0) != 0x80)     \
-        return UTF_INVALID_TRAIL;    \
-
-#define utf_8_is_overlong_sequence_(codepoint, length) \
-    ((codepoint) <= 0x7F   && (length) > 1 ||          \
-     (codepoint) <= 0x7FF  && (length) > 2 ||          \
-     (codepoint) <= 0xFFFF && (length) > 3 )
-
-static utf_error utf_8_decode_(const utf_c8 **strp,
-                               utf_c32 *codepoint,
-                               int length)
+utf_error utf_8_next(const utf_c8 **iter)
 {
-    switch (length) {
-    case 1:
-        *codepoint = **strp;
+    int len;
+    const utf_c8 *orig = *iter;
 
-        break;
-    case 2:
-        *codepoint = (**strp & 0x1F) << 6;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= **strp & 0x3F;
-
-        break;
-    case 3:
-        *codepoint = (**strp & 0x0F) << 12;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= (**strp & 0x3F) << 6;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= **strp & 0x3F;
-
-        break;
-    case 4:
-        *codepoint = (**strp & 0x07) << 18;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= (**strp & 0x3F) << 12;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= (**strp & 0x3F) << 6;
-
-        UTF_NEXT_TRAIL_OR_FAIL_(*strp)
-        *codepoint |= **strp & 0x3F;
-
-        break;
-    default:
+    if ((len = utf_8_length_from_lead(**iter)) == 0)
         return UTF_INVALID_LEAD;
-    }
 
-    return UTF_OK;
-}
+    (*iter)++;
 
-utf_error utf_8_next(const utf_c8 **strp, utf_c32 *codepoint)
-{
-    if (**strp == 0)
-        return UTF_TRUNCATED;
+    if (len == 1)
+        return UTF_OK;
 
-    utf_c32 cp = 0;
-    int len = utf_8_length_from_lead(**strp);
-    utf_error err = utf_8_decode_(strp, &cp, len);
-
-    if (err != UTF_OK)
-        return err;
-
-    if (utf_8_is_overlong_sequence_(cp, len))
-        err = UTF_OVERLONG_SEQUENCE;
-    else if (!utf_is_valid_code_point(cp))
-        err = UTF_INVALID_CODE_POINT;
-
-    if (err != UTF_OK) {
-        *strp -= len - 1;
-        return err;
-    }
-
-    *codepoint = cp;
-    ++*strp;
-
-    return UTF_OK;
-}
-
-utf_error utf_16_next(const utf_c16 **strp, utf_c32 *codepoint)
-{
-    if (**strp == 0)
-        return UTF_TRUNCATED;
-
-    utf_c32 cp = 0;
-
-    if (!utf_is_surrogate(**strp)) {
-        cp = **strp;
-    } else if (utf_is_lead_surrogate(**strp)) {
-        cp = **strp - UTF_LEAD_SURROGATE_MIN << 10;
-
-        if (*++*strp == 0)
-            return UTF_TRUNCATED;
-        if (!utf_is_trail_surrogate(**strp))
+    while (--len > 0) {
+        if (!utf_8_is_trail(**iter))
             return UTF_INVALID_TRAIL;
-
-        cp |= **strp - UTF_TRAIL_SURROGATE_MIN;
-        cp += 0x10000;
-    } else {
-        return UTF_INVALID_LEAD;
+        (*iter)++;
     }
 
-    *codepoint = cp;
-    ++*strp;
+    if (utf_8_is_invalid_code_point(orig))
+        return UTF_INVALID_CODE_POINT;
+    if (utf_8_is_overlong_sequence(orig))
+        return UTF_OVERLONG_SEQUENCE;
 
+    return UTF_OK;
+}
+
+utf_error utf_16_next(const utf_c16 **iter)
+{
+    if (utf_is_trail_surrogate(**iter))
+        return UTF_INVALID_LEAD;
+
+    if (utf_is_lead_surrogate(**iter)) {
+        (*iter)++;
+        if (!utf_is_trail_surrogate(**iter))
+            return UTF_INVALID_TRAIL;
+    }
+
+    (*iter)++;
+    return UTF_OK;
+}
+
+utf_error utf_32_next(const utf_c32 **iter)
+{
+    if (!utf_is_valid_code_point(**iter))
+        return UTF_INVALID_CODE_POINT;
+
+    (*iter)++;
     return UTF_OK;
 }
