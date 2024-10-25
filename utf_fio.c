@@ -14,7 +14,7 @@ struct utf_file {
     utf_endianness endianness;
 };
 
-static const char *utf_mode_str_(utf_file_mode mode);
+static const char *utf_fmode_str_(utf_file_mode mode);
 
 static utf_bool utf_8_fread_bom_(utf_file *stream);
 static utf_endianness utf_fread_bom_(utf_file *stream);
@@ -58,7 +58,7 @@ utf_file *utf_fopen(const char *filename,
     file = malloc(sizeof(utf_file));
     if (!file) return NULL;
 
-    c_file = fopen(filename, utf_mode_str_(mode));
+    c_file = fopen(filename, utf_fmode_str_(mode));
     if (!c_file) { free(file); return NULL; }
 
     file->file = c_file;
@@ -206,19 +206,20 @@ size_t utf_fwrite(utf_file *UTF_RESTRICT stream,
     return n;
 }
 
-static const char *utf_mode_str_(utf_file_mode mode)
+static const char *utf_fmode_str_(utf_file_mode mode)
 {
     switch (mode) {
     case UTF_READ:
         return "rb";
     case UTF_WRITE:
+    case UTF_WRITE | UTF_TRUNC:
         return "wb";
-    case UTF_WRITE | UTF_APPEND:
     case UTF_APPEND:
+    case UTF_WRITE | UTF_APPEND:
         return "ab";
-    case UTF_READ | UTF_APPEND:
-        return "r+b";
     case UTF_READ | UTF_WRITE:
+        return "r+b";
+    case UTF_READ | UTF_WRITE | UTF_TRUNC:
         return "w+b";
     case UTF_READ | UTF_WRITE | UTF_APPEND:
         return "a+b";

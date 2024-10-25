@@ -19,7 +19,8 @@ typedef enum   utf_file_encoding utf_file_encoding;
 enum utf_file_mode {
     UTF_READ   = 0x01,
     UTF_WRITE  = 0x02,
-    UTF_APPEND = 0x04
+    UTF_APPEND = 0x04,
+    UTF_TRUNC  = 0x80
 };
 
 enum utf_file_encoding {
