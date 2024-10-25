@@ -16,9 +16,6 @@ struct utf_file {
 
 static const char *utf_fmode_str_(utf_file_mode mode);
 
-static utf_bool utf_8_fread_bom_(utf_file *stream);
-static utf_endianness utf_fread_bom_(utf_file *stream);
-
 static size_t utf_8_fread_next_raw_(utf_file *UTF_RESTRICT stream,
                                     utf_c8 *UTF_RESTRICT c);
 static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
@@ -65,17 +62,15 @@ utf_file *utf_fopen(const char *filename,
     file->encoding = encoding;
     file->state = UTF_OK;
 
-    if (encoding == UTF_16 || encoding == UTF_32)
-        file->endianness = utf_fread_bom_(file);
-    else if (encoding == UTF_16_LE || encoding == UTF_32_LE)
+    /* UTF-16 and UTF-32 have here the system endianness
+       but it's a temporary solution until the byte order
+       is checked at compile time */
+    if (encoding == UTF_16_LE || encoding == UTF_32_LE)
         file->endianness = UTF_LITTLE_ENDIAN;
     else if (encoding == UTF_16_BE || encoding == UTF_32_BE)
         file->endianness = UTF_BIG_ENDIAN;
     else
         file->endianness = utf_system_endianness();
-
-    if (encoding == UTF_8_SIG)
-        utf_8_fread_bom_(file);
 
     return file;
 }
@@ -226,50 +221,6 @@ static const char *utf_fmode_str_(utf_file_mode mode)
     default:
         return NULL;
     }
-}
-
-static utf_bool utf_8_fread_bom_(utf_file *stream)
-{
-    if (getc(stream->file) == 0xEF &&
-        getc(stream->file) == 0xBB &&
-        getc(stream->file) == 0xBF)
-        return utf_true;
-
-    rewind(stream);
-    return utf_false;
-}
-
-static utf_endianness utf_fread_bom_(utf_file *stream)
-{
-    utf_c8 bytes[4] = {0, 0, 0, 0};
-
-    switch (stream->encoding) {
-    case UTF_16:
-        fread(bytes, 1, 2, stream->file);
-        if (bytes[0] == 0xFE &&
-            bytes[1] == 0xFF)
-            return UTF_BIG_ENDIAN;
-        if (bytes[0] == 0xFF &&
-            bytes[1] == 0xFE)
-            return UTF_LITTLE_ENDIAN;
-        break;
-    case UTF_32:
-        fread(bytes, 1, 4, stream->file);
-        if (bytes[0] == 0x00 &&
-            bytes[1] == 0x00 &&
-            bytes[2] == 0xFE &&
-            bytes[3] == 0xFF)
-            return UTF_BIG_ENDIAN;
-        if (bytes[0] == 0xFF &&
-            bytes[1] == 0xFE &&
-            bytes[2] == 0x00 &&
-            bytes[3] == 0x00)
-            return UTF_LITTLE_ENDIAN;
-        break;
-    }
-
-    rewind(stream->file);
-    return utf_system_endianness();
 }
 
 static size_t utf_8_fread_next_raw_(utf_file *UTF_RESTRICT stream,
