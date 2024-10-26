@@ -6,7 +6,7 @@ void utf_8_to_16(const utf_c8  *UTF_RESTRICT src,
                        utf_c16 *UTF_RESTRICT dst)
 {
     while (*src != 0) {
-        utf_8_chr_to_16_(src, dst);
+        utf_8_chr_to_16_native_(src, dst);
 
         src += utf_8_length_from_lead(*src);
         dst += !utf_is_surrogate(*dst) ? 1 : 2;
@@ -32,7 +32,7 @@ void utf_16_to_8(const utf_c16 *UTF_RESTRICT src,
                        utf_c8  *UTF_RESTRICT dst)
 {
     while (*src != 0) {
-        utf_16_chr_to_8_(src, dst);
+        utf_16_native_chr_to_8_(src, dst);
 
         src += !utf_is_surrogate(*src) ? 1 : 2;
         dst += utf_8_length_from_lead(*dst);

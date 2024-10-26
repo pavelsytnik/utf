@@ -64,7 +64,7 @@ void utf_32_chr_to_opposite(const utf_c32 *src, utf_c32 *dst);
 
 #else /* Interface */
 
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
 #    define utf_8_chr_to_16_be(src, dst) \
          utf_8_chr_to_16_native_(src, dst)
 #    define utf_8_chr_to_16_le(src, dst) \
@@ -101,7 +101,7 @@ void utf_32_chr_to_opposite(const utf_c32 *src, utf_c32 *dst);
          utf_32_foreign_chr_to_16_native_(src, dst)
 #    define utf_32_le_chr_to_16_le(src, dst) \
          utf_32_foreign_chr_to_16_foreign_(src, dst)
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
 #    define utf_8_chr_to_16_be(src, dst) \
          utf_8_chr_to_16_foreign_(src, dst)
 #    define utf_8_chr_to_16_le(src, dst) \
@@ -141,7 +141,7 @@ void utf_32_chr_to_opposite(const utf_c32 *src, utf_c32 *dst);
 #endif
 
 #define utf_32_chr_to_opposite(src, dst) \
-    do { *(dst) = utf_32_bswap(*(src)); } while (0)
+    do { *(dst) = utf_c32_bswap(*(src)); } while (0)
 
 #endif /* Interface */
 
@@ -231,23 +231,23 @@ while (0)
 #define utf_16_chr_to_foreign_(src, dst) do \
 {                                           \
     if (utf_is_surrogate(src[0])) {         \
-        dst[0] = utf_16_bswap(src[0]);      \
-        dst[1] = utf_16_bswap(src[1]);      \
+        dst[0] = utf_c16_bswap(src[0]);     \
+        dst[1] = utf_c16_bswap(src[1]);     \
     } else {                                \
-        dst[0] = utf_16_bswap(src[0]);      \
+        dst[0] = utf_c16_bswap(src[0]);     \
     }                                       \
 }                                           \
 while (0)
 
-#define utf_16_chr_to_native_(src, dst) do        \
-{                                                 \
-    if (utf_is_surrogate(utf_16_bswap(src[0]))) { \
-        dst[0] = utf_16_bswap(src[0]);            \
-        dst[1] = utf_16_bswap(src[1]);            \
-    } else {                                      \
-        dst[0] = utf_16_bswap(src[0]);            \
-    }                                             \
-}                                                 \
+#define utf_16_chr_to_native_(src, dst) do         \
+{                                                  \
+    if (utf_is_surrogate(utf_c16_bswap(src[0]))) { \
+        dst[0] = utf_c16_bswap(src[0]);            \
+        dst[1] = utf_c16_bswap(src[1]);            \
+    } else {                                       \
+        dst[0] = utf_c16_bswap(src[0]);            \
+    }                                              \
+}                                                  \
 while (0)
 
 #define utf_8_chr_to_16_native_(src, dst) do \
@@ -422,9 +422,9 @@ static UTF_INLINE
 void utf_8_chr_to_16_be(const utf_c8  *UTF_RESTRICT src,
                               utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_8_chr_to_16_native_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_8_chr_to_16_foreign_(src, dst);
 #endif
 }
@@ -433,9 +433,9 @@ static UTF_INLINE
 void utf_8_chr_to_16_le(const utf_c8  *UTF_RESTRICT src,
                               utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_8_chr_to_16_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_8_chr_to_16_native_(src, dst);
 #endif
 }
@@ -444,9 +444,9 @@ static UTF_INLINE
 void utf_8_chr_to_32_be(const utf_c8  *UTF_RESTRICT src,
                               utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_8_chr_to_32_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_8_chr_to_32_foreign_(src, dst);
 #endif
 }
@@ -455,9 +455,9 @@ static UTF_INLINE
 void utf_8_chr_to_32_le(const utf_c8  *UTF_RESTRICT src,
                               utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_8_chr_to_32_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_8_chr_to_32_(src, dst);
 #endif
 }
@@ -466,9 +466,9 @@ static UTF_INLINE
 void utf_16_be_chr_to_8(const utf_c16 *UTF_RESTRICT src,
                               utf_c8  *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_native_chr_to_8_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_foreign_chr_to_8_(src, dst);
 #endif
 }
@@ -477,9 +477,9 @@ static UTF_INLINE
 void utf_16_be_chr_to_32_be(const utf_c16 *UTF_RESTRICT src,
                                   utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_chr_to_32_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_foreign_chr_to_32_foreign_(src, dst);
 #endif
 }
@@ -488,9 +488,9 @@ static UTF_INLINE
 void utf_16_be_chr_to_32_le(const utf_c16 *UTF_RESTRICT src,
                                   utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_native_chr_to_32_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_foreign_chr_to_32_native_(src, dst);
 #endif
 }
@@ -499,9 +499,9 @@ static UTF_INLINE
 void utf_16_le_chr_to_8(const utf_c16 *UTF_RESTRICT src,
                               utf_c8  *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_foreign_chr_to_8_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_native_chr_to_8_(src, dst);
 #endif
 }
@@ -510,9 +510,9 @@ static UTF_INLINE
 void utf_16_le_chr_to_32_be(const utf_c16 *UTF_RESTRICT src,
                                   utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_foreign_chr_to_32_native_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_native_chr_to_32_foreign_(src, dst);
 #endif
 }
@@ -521,9 +521,9 @@ static UTF_INLINE
 void utf_16_le_chr_to_32_le(const utf_c16 *UTF_RESTRICT src,
                                   utf_c32 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_foreign_chr_to_32_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_chr_to_32_(src, dst);
 #endif
 }
@@ -532,9 +532,9 @@ static UTF_INLINE
 void utf_32_be_chr_to_8(const utf_c32 *UTF_RESTRICT src,
                               utf_c8  *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_chr_to_8_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_foreign_chr_to_8_(src, dst);
 #endif
 }
@@ -543,9 +543,9 @@ static UTF_INLINE
 void utf_32_be_chr_to_16_be(const utf_c32 *UTF_RESTRICT src,
                                   utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_chr_to_16_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_foreign_chr_to_16_foreign_(src, dst);
 #endif
 }
@@ -554,9 +554,9 @@ static UTF_INLINE
 void utf_32_be_chr_to_16_le(const utf_c32 *UTF_RESTRICT src,
                                   utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_native_chr_to_16_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_foreign_chr_to_16_native_(src, dst);
 #endif
 }
@@ -565,9 +565,9 @@ static UTF_INLINE
 void utf_32_le_chr_to_8(const utf_c32 *UTF_RESTRICT src,
                               utf_c8  *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_foreign_chr_to_8_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_chr_to_8_(src, dst);
 #endif
 }
@@ -576,9 +576,9 @@ static UTF_INLINE
 void utf_32_le_chr_to_16_be(const utf_c32 *UTF_RESTRICT src,
                                   utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_foreign_chr_to_16_native_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_native_chr_to_16_foreign_(src, dst);
 #endif
 }
@@ -587,9 +587,9 @@ static UTF_INLINE
 void utf_32_le_chr_to_16_le(const utf_c32 *UTF_RESTRICT src,
                                   utf_c16 *UTF_RESTRICT dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_32_foreign_chr_to_16_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_32_chr_to_16_(src, dst);
 #endif
 }
@@ -597,9 +597,9 @@ void utf_32_le_chr_to_16_le(const utf_c32 *UTF_RESTRICT src,
 static UTF_INLINE
 void utf_16_be_chr_to_le(const utf_c16 *src, utf_c16 *dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_chr_to_foreign_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_chr_to_native_(src, dst);
 #endif
 }
@@ -607,9 +607,9 @@ void utf_16_be_chr_to_le(const utf_c16 *src, utf_c16 *dst)
 static UTF_INLINE
 void utf_16_le_chr_to_be(const utf_c16 *src, utf_c16 *dst)
 {
-#if defined UTF_BIG_ENDIANX
+#if defined UTF_BIG_ENDIAN
     utf_16_chr_to_native_(src, dst);
-#elif defined UTF_LITTLE_ENDIANX
+#elif defined UTF_LITTLE_ENDIAN
     utf_16_chr_to_foreign_(src, dst);
 #endif
 }
@@ -617,7 +617,7 @@ void utf_16_le_chr_to_be(const utf_c16 *src, utf_c16 *dst)
 static UTF_INLINE
 void utf_32_chr_to_opposite(const utf_c32 *src, utf_c32 *dst)
 {
-    *dst = utf_32_bswap(*src);
+    *dst = utf_c32_bswap(*src);
 }
 
 #endif /* Function definitions */

@@ -11,39 +11,54 @@ struct utf_file {
     FILE *file;
     utf_file_encoding encoding;
     utf_error state;
-    utf_endianness endianness;
 };
 
 static const char *utf_fmode_str_(utf_file_mode mode);
 
 static size_t utf_8_fread_next_raw_(utf_file *UTF_RESTRICT stream,
                                     utf_c8 *UTF_RESTRICT c);
-static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
-                                     utf_c16 *UTF_RESTRICT c);
-static size_t utf_32_fread_next_raw_(utf_file *UTF_RESTRICT stream,
-                                     utf_c32 *UTF_RESTRICT c);
+static size_t utf_16_be_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c16 *UTF_RESTRICT c);
+static size_t utf_16_le_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c16 *UTF_RESTRICT c);
+static size_t utf_32_be_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c32 *UTF_RESTRICT c);
+static size_t utf_32_le_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c32 *UTF_RESTRICT c);
 
 static utf_bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
                                   utf_c8 *UTF_RESTRICT c);
-static utf_bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
-                                   utf_c8 *UTF_RESTRICT c);
-static utf_bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
-                                   utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_16_be_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_16_le_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_32_be_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT c);
+static utf_bool utf_32_le_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT c);
 
 static utf_c32 utf_8_fgetc_(utf_file *stream);
-static utf_c32 utf_16_fgetc_(utf_file *stream);
-static utf_c32 utf_32_fgetc_(utf_file *stream);
+static utf_c32 utf_16_be_fgetc_(utf_file *stream);
+static utf_c32 utf_16_le_fgetc_(utf_file *stream);
+static utf_c32 utf_32_be_fgetc_(utf_file *stream);
+static utf_c32 utf_32_le_fgetc_(utf_file *stream);
 
 static void utf_8_fwrite_next_(utf_file *UTF_RESTRICT stream,
                                const utf_c8 *UTF_RESTRICT c);
-static void utf_16_fwrite_next_(utf_file *UTF_RESTRICT stream,
-                                const utf_c8 *UTF_RESTRICT c);
-static void utf_32_fwrite_next_(utf_file *UTF_RESTRICT stream,
-                                const utf_c8 *UTF_RESTRICT c);
+static void utf_16_be_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c);
+static void utf_16_le_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c);
+static void utf_32_be_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c);
+static void utf_32_le_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c);
 
 static void utf_8_fputc_(utf_file *stream, utf_c32 code);
-static void utf_16_fputc_(utf_file *stream, utf_c32 code);
-static void utf_32_fputc_(utf_file *stream, utf_c32 code);
+static void utf_16_be_fputc_(utf_file *stream, utf_c32 code);
+static void utf_16_le_fputc_(utf_file *stream, utf_c32 code);
+static void utf_32_be_fputc_(utf_file *stream, utf_c32 code);
+static void utf_32_le_fputc_(utf_file *stream, utf_c32 code);
 
 utf_file *utf_fopen(const char *filename,
                     utf_file_mode mode,
@@ -61,16 +76,6 @@ utf_file *utf_fopen(const char *filename,
     file->file = c_file;
     file->encoding = encoding;
     file->state = UTF_OK;
-
-    /* UTF-16 and UTF-32 have here the system endianness
-       but it's a temporary solution until the byte order
-       is checked at compile time */
-    if (encoding == UTF_16_LE || encoding == UTF_32_LE)
-        file->endianness = UTF_LITTLE_ENDIAN;
-    else if (encoding == UTF_16_BE || encoding == UTF_32_BE)
-        file->endianness = UTF_BIG_ENDIAN;
-    else
-        file->endianness = utf_system_endianness();
 
     return file;
 }
@@ -102,13 +107,13 @@ utf_c32 utf_fgetc(utf_file *stream)
     typedef utf_c32 (*fgetc_ptr)(utf_file *);
     static fgetc_ptr fgetc_table[] = {
         utf_8_fgetc_,
-        utf_8_fgetc_,
-        utf_16_fgetc_,
-        utf_16_fgetc_,
-        utf_16_fgetc_,
-        utf_32_fgetc_,
-        utf_32_fgetc_,
-        utf_32_fgetc_
+        NULL,
+        NULL,
+        utf_16_be_fgetc_,
+        utf_16_le_fgetc_,
+        NULL,
+        utf_32_be_fgetc_,
+        utf_32_le_fgetc_
     };
 
     return fgetc_table[stream->encoding](stream);
@@ -119,13 +124,13 @@ utf_c32 utf_fputc(utf_file *stream, utf_c32 code)
     typedef void (*fputc_ptr)(utf_file *, utf_c32);
     static fputc_ptr fputc_table[] = {
         utf_8_fputc_,
-        utf_8_fputc_,
-        utf_16_fputc_,
-        utf_16_fputc_,
-        utf_16_fputc_,
-        utf_32_fputc_,
-        utf_32_fputc_,
-        utf_32_fputc_
+        NULL,
+        NULL,
+        utf_16_be_fputc_,
+        utf_16_le_fputc_,
+        NULL,
+        utf_32_be_fputc_,
+        utf_32_le_fputc_
     };
 
     if (!utf_is_valid_code_point(code))
@@ -142,13 +147,13 @@ size_t utf_fread(utf_file *UTF_RESTRICT stream,
     typedef utf_bool (*fread_next_ptr)(utf_file *, utf_c8 *);
     static fread_next_ptr fread_next_table[] = {
         utf_8_fread_next_,
-        utf_8_fread_next_,
-        utf_16_fread_next_,
-        utf_16_fread_next_,
-        utf_16_fread_next_,
-        utf_32_fread_next_,
-        utf_32_fread_next_,
-        utf_32_fread_next_
+        NULL,
+        NULL,
+        utf_16_be_fread_next_,
+        utf_16_le_fread_next_,
+        NULL,
+        utf_32_be_fread_next_,
+        utf_32_le_fread_next_
     };
 
     if (!stream || !buf || count == 0)
@@ -177,13 +182,13 @@ size_t utf_fwrite(utf_file *UTF_RESTRICT stream,
     typedef void (*fwrite_next_ptr)(utf_file *, const utf_c8 *);
     static fwrite_next_ptr fwrite_next_table[] = {
         utf_8_fwrite_next_,
-        utf_8_fwrite_next_,
-        utf_16_fwrite_next_,
-        utf_16_fwrite_next_,
-        utf_16_fwrite_next_,
-        utf_32_fwrite_next_,
-        utf_32_fwrite_next_,
-        utf_32_fwrite_next_
+        NULL,
+        NULL,
+        utf_16_be_fwrite_next_,
+        utf_16_le_fwrite_next_,
+        NULL,
+        utf_32_be_fwrite_next_,
+        utf_32_le_fwrite_next_
     };
 
     if (!stream || !buf || count == 0)
@@ -276,8 +281,8 @@ static size_t utf_8_fread_next_raw_(utf_file *UTF_RESTRICT stream,
     return len;
 }
 
-static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
-                                     utf_c16 *UTF_RESTRICT sym)
+static size_t utf_16_be_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c16 *UTF_RESTRICT sym)
 {
     {
         int c;
@@ -293,24 +298,30 @@ static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
         return 0;
     }
 
-    if (utf_system_endianness() != stream->endianness)
-        sym[0] = utf_16_byteswap(sym[0]);
-
+#ifdef UTF_BIG_ENDIAN
     if (utf_is_trail_surrogate(sym[0])) {
+#else
+    if (utf_is_trail_surrogate(utf_c16_bswap(sym[0]))) {
+#endif
         stream->state = UTF_INVALID_LEAD;
         return 0;
     }
 
+#ifdef UTF_BIG_ENDIAN
     if (utf_is_lead_surrogate(sym[0])) {
+#else
+    if (utf_is_lead_surrogate(utf_c16_bswap(sym[0]))) {
+#endif
         if (fread(&sym[1], 2, 1, stream->file) == 0) {
             stream->state = UTF_TRUNCATED;
             return 0;
         }
 
-        if (utf_system_endianness() != stream->endianness)
-            sym[1] = utf_16_byteswap(sym[1]);
-
+    #ifdef UTF_BIG_ENDIAN
         if (!utf_is_trail_surrogate(sym[1])) {
+    #else
+        if (!utf_is_trail_surrogate(utf_c16_bswap(sym[1]))) {
+    #endif
             stream->state = UTF_INVALID_TRAIL;
             return 0;
         }
@@ -323,8 +334,91 @@ static size_t utf_16_fread_next_raw_(utf_file *UTF_RESTRICT stream,
     return 1;
 }
 
-static size_t utf_32_fread_next_raw_(utf_file *UTF_RESTRICT stream,
-                                     utf_c32 *UTF_RESTRICT sym)
+static size_t utf_16_le_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c16 *UTF_RESTRICT sym)
+{
+    {
+        int c;
+        if ((c = getc(stream->file)) == EOF) {
+            stream->state = UTF_OK;
+            return 0;
+        }
+        ungetc(c, stream->file);
+    }
+
+    if (fread(&sym[0], 2, 1, stream->file) == 0) {
+        stream->state = UTF_TRUNCATED;
+        return 0;
+    }
+
+#ifdef UTF_LITTLE_ENDIAN
+    if (utf_is_trail_surrogate(sym[0])) {
+#else
+    if (utf_is_trail_surrogate(utf_c16_bswap(sym[0]))) {
+#endif
+        stream->state = UTF_INVALID_LEAD;
+        return 0;
+    }
+
+#ifdef UTF_LITTLE_ENDIAN
+    if (utf_is_lead_surrogate(sym[0])) {
+#else
+    if (utf_is_lead_surrogate(utf_c16_bswap(sym[0]))) {
+#endif
+        if (fread(&sym[1], 2, 1, stream->file) == 0) {
+            stream->state = UTF_TRUNCATED;
+            return 0;
+        }
+
+    #ifdef UTF_LITTLE_ENDIAN
+        if (!utf_is_trail_surrogate(sym[1])) {
+    #else
+        if (!utf_is_trail_surrogate(utf_c16_bswap(sym[1]))) {
+    #endif
+            stream->state = UTF_INVALID_TRAIL;
+            return 0;
+        }
+
+        stream->state = UTF_OK;
+        return 2;
+    }
+
+    stream->state = UTF_OK;
+    return 1;
+}
+
+static size_t utf_32_be_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c32 *UTF_RESTRICT sym)
+{
+    {
+        int c;
+        if ((c = getc(stream->file)) == EOF) {
+            stream->state = UTF_OK;
+            return 0;
+        }
+        ungetc(c, stream->file);
+    }
+
+    if (fread(sym, 4, 1, stream->file) == 0) {
+        stream->state = UTF_TRUNCATED;
+        return 0;
+    }
+    
+#ifdef UTF_BIG_ENDIAN
+    if (!utf_is_valid_code_point(*sym)) {
+#else
+    if (!utf_is_valid_code_point(utf_c32_bswap(*sym))) {
+#endif
+        stream->state = UTF_INVALID_CODE_POINT;
+        return 0;
+    }
+
+    stream->state = UTF_OK;
+    return 1;
+}
+
+static size_t utf_32_le_fread_next_raw_(utf_file *UTF_RESTRICT stream,
+                                        utf_c32 *UTF_RESTRICT sym)
 {
     {
         int c;
@@ -340,10 +434,11 @@ static size_t utf_32_fread_next_raw_(utf_file *UTF_RESTRICT stream,
         return 0;
     }
 
-    if (utf_system_endianness() != stream->endianness)
-        *sym = utf_32_byteswap(*sym);
-
+#ifdef UTF_LITTLE_ENDIAN
     if (!utf_is_valid_code_point(*sym)) {
+#else
+    if (!utf_is_valid_code_point(utf_c32_bswap(*sym))) {
+#endif
         stream->state = UTF_INVALID_CODE_POINT;
         return 0;
     }
@@ -365,29 +460,55 @@ static utf_bool utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
     return utf_true;
 }
 
-static utf_bool utf_16_fread_next_(utf_file *UTF_RESTRICT stream,
-                                   utf_c8 *UTF_RESTRICT buf)
+static utf_bool utf_16_be_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT buf)
 {
     utf_c16 sym[2];
     size_t len;
 
-    if ((len = utf_16_fread_next_raw_(stream, sym)) == 0)
+    if ((len = utf_16_be_fread_next_raw_(stream, sym)) == 0)
         return utf_false;
 
-    utf_16_chr_to_8_(sym, buf);
+    utf_16_be_chr_to_8(sym, buf);
     return utf_true;
 }
 
-static utf_bool utf_32_fread_next_(utf_file *UTF_RESTRICT stream,
-                                   utf_c8 *UTF_RESTRICT buf)
+static utf_bool utf_16_le_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT buf)
+{
+    utf_c16 sym[2];
+    size_t len;
+
+    if ((len = utf_16_le_fread_next_raw_(stream, sym)) == 0)
+        return utf_false;
+
+    utf_16_le_chr_to_8(sym, buf);
+    return utf_true;
+}
+
+static utf_bool utf_32_be_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT buf)
 {
     utf_c32 sym;
     size_t len;
 
-    if ((len = utf_32_fread_next_raw_(stream, &sym)) == 0)
+    if ((len = utf_32_be_fread_next_raw_(stream, &sym)) == 0)
         return utf_false;
 
-    utf_32_chr_to_8_(&sym, buf);
+    utf_32_be_chr_to_8(&sym, buf);
+    return utf_true;
+}
+
+static utf_bool utf_32_le_fread_next_(utf_file *UTF_RESTRICT stream,
+                                      utf_c8 *UTF_RESTRICT buf)
+{
+    utf_c32 sym;
+    size_t len;
+
+    if ((len = utf_32_le_fread_next_raw_(stream, &sym)) == 0)
+        return utf_false;
+
+    utf_32_le_chr_to_8(&sym, buf);
     return utf_true;
 }
 
@@ -424,14 +545,18 @@ static utf_c32 utf_8_fgetc_(utf_file *stream)
     return cp;
 }
 
-static utf_c32 utf_16_fgetc_(utf_file *stream)
+static utf_c32 utf_16_be_fgetc_(utf_file *stream)
 {
     utf_c16 buf[2];
     size_t count;
     utf_c32 cp = 0;
 
-    if ((count = utf_16_fread_next_raw_(stream, buf)) == 0)
+    if ((count = utf_16_be_fread_next_raw_(stream, buf)) == 0)
         return UTF_EOF;
+
+#ifdef UTF_LITTLE_ENDIAN
+    utf_16_be_chr_to_le(buf, buf);
+#endif
 
     if (count == 1) {
         cp |= buf[0];
@@ -444,11 +569,56 @@ static utf_c32 utf_16_fgetc_(utf_file *stream)
     return cp;
 }
 
-static utf_c32 utf_32_fgetc_(utf_file *stream)
+static utf_c32 utf_16_le_fgetc_(utf_file *stream)
+{
+    utf_c16 buf[2];
+    size_t count;
+    utf_c32 cp = 0;
+
+    if ((count = utf_16_le_fread_next_raw_(stream, buf)) == 0)
+        return UTF_EOF;
+
+#ifdef UTF_BIG_ENDIAN
+    utf_16_le_chr_to_be(buf, buf);
+#endif
+
+    if (count == 1) {
+        cp |= buf[0];
+    } else if (count == 2) {
+        cp |= buf[0] - 0xD800 << 10;
+        cp |= buf[1] - 0xDC00;
+        cp += 0x10000;
+    }
+
+    return cp;
+}
+
+static utf_c32 utf_32_be_fgetc_(utf_file *stream)
 {
     utf_c32 cp;
 
-    return utf_32_fread_next_raw_(stream, &cp) ? cp : UTF_EOF;
+    if (!utf_32_be_fread_next_raw_(stream, &cp))
+        return UTF_EOF;
+
+#ifdef UTF_LITTLE_ENDIAN
+    utf_32_chr_to_opposite(&cp, &cp);
+#endif
+
+    return cp;
+}
+
+static utf_c32 utf_32_le_fgetc_(utf_file *stream)
+{
+    utf_c32 cp;
+
+    if (!utf_32_le_fread_next_raw_(stream, &cp))
+        return UTF_EOF;
+
+#ifdef UTF_BIG_ENDIAN
+    utf_32_chr_to_opposite(&cp, &cp);
+#endif
+
+    return cp;
 }
 
 static void utf_8_fwrite_next_(utf_file *UTF_RESTRICT stream,
@@ -457,34 +627,49 @@ static void utf_8_fwrite_next_(utf_file *UTF_RESTRICT stream,
     fwrite(c, 1, utf_8_length_from_lead(*c), stream->file);
 }
 
-static void utf_16_fwrite_next_(utf_file *UTF_RESTRICT stream,
-                                const utf_c8 *UTF_RESTRICT c)
+static void utf_16_be_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c)
 {
     utf_c16 sym[2];
     size_t len;
 
-    utf_8_chr_to_16_(c, sym);
+    utf_8_chr_to_16_be(c, sym);
+#ifdef UTF_LITTLE_ENDIAN
+    len = !utf_is_surrogate(utf_c16_bswap(*sym)) ? 1 : 2;
+#else
     len = !utf_is_surrogate(*sym) ? 1 : 2;
-
-    if (stream->endianness != utf_system_endianness()) {
-        sym[0] = utf_16_byteswap(sym[0]);
-        if (len == 2)
-            sym[1] = utf_16_byteswap(sym[1]);
-    }
-
+#endif
     fwrite(sym, 2, len, stream->file);
 }
 
-static void utf_32_fwrite_next_(utf_file *UTF_RESTRICT stream,
-                                const utf_c8 *UTF_RESTRICT c)
+static void utf_16_le_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c)
+{
+    utf_c16 sym[2];
+    size_t len;
+
+    utf_8_chr_to_16_le(c, sym);
+#ifdef UTF_BIG_ENDIAN
+    len = !utf_is_surrogate(utf_c16_bswap(*sym)) ? 1 : 2;
+#else
+    len = !utf_is_surrogate(*sym) ? 1 : 2;
+#endif
+    fwrite(sym, 2, len, stream->file);
+}
+
+static void utf_32_be_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c)
 {
     utf_c32 sym;
+    utf_8_chr_to_32_be(c, &sym);
+    fwrite(&sym, 4, 1, stream->file);
+}
 
-    utf_8_chr_to_32_(c, &sym);
-
-    if (stream->endianness != utf_system_endianness())
-        sym = utf_32_byteswap(sym);
-
+static void utf_32_le_fwrite_next_(utf_file *UTF_RESTRICT stream,
+                                   const utf_c8 *UTF_RESTRICT c)
+{
+    utf_c32 sym;
+    utf_8_chr_to_32_le(c, &sym);
     fwrite(&sym, 4, 1, stream->file);
 }
 
@@ -507,46 +692,52 @@ static void utf_8_fputc_(utf_file *stream, utf_c32 code)
     }
 }
 
-static void utf_16_fputc_(utf_file *stream, utf_c32 code)
+static void utf_16_be_fputc_(utf_file *stream, utf_c32 code)
 {
     if (code < 0x10000) {
-        if (stream->endianness == UTF_BIG_ENDIAN) {
-            putc(code >> 8, stream->file);
-            putc(code     , stream->file);
-        } else {
-            putc(code     , stream->file);
-            putc(code >> 8, stream->file);
-        }
+        putc(code >> 8, stream->file);
+        putc(code     , stream->file);
     } else if (code < 0x110000) {
         utf_c32 tmp = code - 0x10000;
         utf_c16 high = (tmp >> 10)   + 0xD800;
         utf_c16 low  = (tmp & 0x3FF) + 0xDC00;
 
-        if (stream->endianness == UTF_BIG_ENDIAN) {
-            putc(high >> 8, stream->file);
-            putc(high     , stream->file);
-            putc(low  >> 8, stream->file);
-            putc(low      , stream->file);
-        } else {
-            putc(low      , stream->file);
-            putc(low  >> 8, stream->file);
-            putc(high     , stream->file);
-            putc(high >> 8, stream->file);
-        }
+        putc(high >> 8, stream->file);
+        putc(high     , stream->file);
+        putc(low  >> 8, stream->file);
+        putc(low      , stream->file);
     }
 }
 
-static void utf_32_fputc_(utf_file *stream, utf_c32 code)
+static void utf_16_le_fputc_(utf_file *stream, utf_c32 code)
 {
-    if (stream->endianness == UTF_BIG_ENDIAN) {
-        putc(code >> 24, stream->file);
-        putc(code >> 16, stream->file);
-        putc(code >>  8, stream->file);
-        putc(code      , stream->file);
-    } else {
-        putc(code      , stream->file);
-        putc(code >>  8, stream->file);
-        putc(code >> 16, stream->file);
-        putc(code >> 24, stream->file);
+    if (code < 0x10000) {
+        putc(code     , stream->file);
+        putc(code >> 8, stream->file);
+    } else if (code < 0x110000) {
+        utf_c32 tmp = code - 0x10000;
+        utf_c16 high = (tmp >> 10)   + 0xD800;
+        utf_c16 low = (tmp & 0x3FF) + 0xDC00;
+
+        putc(low      , stream->file);
+        putc(low  >> 8, stream->file);
+        putc(high     , stream->file);
+        putc(high >> 8, stream->file);
     }
+}
+
+static void utf_32_be_fputc_(utf_file *stream, utf_c32 code)
+{
+    putc(code >> 24, stream->file);
+    putc(code >> 16, stream->file);
+    putc(code >>  8, stream->file);
+    putc(code      , stream->file);
+}
+
+static void utf_32_le_fputc_(utf_file *stream, utf_c32 code)
+{
+    putc(code      , stream->file);
+    putc(code >>  8, stream->file);
+    putc(code >> 16, stream->file);
+    putc(code >> 24, stream->file);
 }
