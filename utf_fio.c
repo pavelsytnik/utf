@@ -15,6 +15,10 @@ struct utf_file {
 };
 
 static const char *utf_fmode_str_(utf_file_mode mode);
+static void utf_file_decompose_encoding_(utf_file *stream,
+                                         utf_file_encoding enc);
+static void utf_file_process_bom_(utf_file *stream, utf_file_mode mode);
+static utf_bool utf_file_try_swap_endian_(utf_file *stream);
 static void utf_fread_bom_(utf_file *stream);
 static void utf_fwrite_bom_(utf_file *stream);
 
@@ -60,25 +64,10 @@ utf_file *utf_fopen(const char *filename,
     if (!c_file) { free(file); return NULL; }
 
     file->file = c_file;
-    file->encoding = encoding;
     file->state = UTF_OK;
-    file->bom_aware = encoding == UTF_8_SIG ||
-                      encoding == UTF_16    ||
-                      encoding == UTF_32;
+    utf_file_decompose_encoding_(file, encoding);
 
-    if (file->bom_aware) {
-        switch (mode) {
-        case UTF_READ:
-        case UTF_READ | UTF_WRITE:
-            utf_fread_bom_(file);
-            break;
-        case UTF_WRITE:
-        case UTF_WRITE | UTF_TRUNC:
-        case UTF_WRITE | UTF_TRUNC | UTF_READ:
-            utf_fwrite_bom_(file);
-            break;
-        }
-    }
+    utf_file_process_bom_(file, mode);
 
     return file;
 }
@@ -285,71 +274,94 @@ static const char *utf_fmode_str_(utf_file_mode mode)
     }
 }
 
+static utf_bool utf_file_try_swap_endian_(utf_file *stream)
+{
+#ifdef UTF_BIG_ENDIAN
+    if (stream->encoding == UTF_16_BE) {
+        stream->encoding = UTF_16_LE;
+        return utf_true;
+    }
+    if (stream->encoding == UTF_32_BE) {
+        stream->encoding = UTF_32_LE;
+        return utf_true;;
+    }
+#else
+    if (stream->encoding == UTF_16_LE) {
+        stream->encoding = UTF_16_BE;
+        return utf_true;
+    }
+    if (stream->encoding == UTF_32_LE) {
+        stream->encoding = UTF_32_BE;
+        return utf_true;
+    }
+#endif
+
+    return utf_false;
+}
+
+static void utf_file_decompose_encoding_(utf_file *stream,
+                                         utf_file_encoding enc)
+{
+    stream->bom_aware = enc == UTF_8_SIG ||
+                        enc == UTF_16    ||
+                        enc == UTF_32;
+
+    if (enc == UTF_8_SIG)
+        stream->encoding = UTF_8;
+#ifdef UTF_BIG_ENDIAN
+    else if (enc == UTF_16)
+        stream->encoding = UTF_16_BE;
+    else if (enc == UTF_32)
+        stream->encoding = UTF_32_BE;
+#else
+    else if (enc == UTF_16)
+        stream->encoding = UTF_16_LE;
+    else if (enc == UTF_32)
+        stream->encoding = UTF_32_LE;
+#endif
+    else
+        stream->encoding = enc;
+}
+
+static void utf_file_process_bom_(utf_file *stream, utf_file_mode mode)
+{
+    if (stream->bom_aware) {
+        switch (mode) {
+        case UTF_READ:
+        case UTF_READ | UTF_WRITE:
+        {
+            utf_c32 cp = utf_fgetc(stream);
+
+            if (cp == 0xFFFE && utf_file_try_swap_endian_(stream))
+                return;
+
+            if (cp == 0xFEFF)
+                return;
+
+            rewind(stream->file);
+
+            break;
+        }
+        case UTF_WRITE:
+        case UTF_WRITE | UTF_TRUNC:
+        case UTF_WRITE | UTF_TRUNC | UTF_READ:
+            utf_fputc(stream, 0xFEFF);
+            break;
+        }
+    }
+}
+
+/* Now these two following functions are unused */
 static void utf_fread_bom_(utf_file *stream)
 {
-    utf_c32 cp;
-
-    switch (stream->encoding) {
-    case UTF_8_SIG:
-        stream->encoding = UTF_8;
-        cp = utf_fgetc(stream);
-
-        if (cp == 0xFEFF)
-            return;
-
-        break;
-    case UTF_16:
-        stream->encoding = UTF_16_LE;
-        cp = utf_fgetc(stream);
-
-        if (cp == 0xFFFE) {
-            stream->encoding = UTF_16_BE;
-            return;
-        }
-        if (cp == 0xFEFF)
-            return;
-
-        break;
-    case UTF_32:
-        stream->encoding = UTF_32_LE;
-        cp = utf_fgetc(stream);
-
-        if (cp == 0xFFFE) {
-            stream->encoding = UTF_32_BE;
-            return;
-        }
-        if (cp == 0xFEFF)
-            return;
-
-        break;
-    default:
-        cp = utf_fgetc(stream);
-
-        if (cp == 0xFEFF)
-            return;
-
-        break;
-    }
+    if (utf_fgetc(stream) == 0xFEFF)
+        return;
 
     rewind(stream->file);
 }
 
 static void utf_fwrite_bom_(utf_file *stream)
 {
-    if (stream->encoding == UTF_8_SIG)
-        stream->encoding = UTF_8;
-#ifdef UTF_BIG_ENDIAN
-    else if (stream->encoding == UTF_16)
-        stream->encoding = UTF_16_BE;
-    else if (stream->encoding == UTF_32)
-        stream->encoding = UTF_32_BE;
-#else
-    else if (stream->encoding == UTF_16)
-        stream->encoding = UTF_16_LE;
-    else if (stream->encoding == UTF_32)
-        stream->encoding = UTF_32_LE;
-#endif
-
     utf_fputc(stream, 0xFEFF);
 }
 
