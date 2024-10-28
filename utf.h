@@ -4,6 +4,7 @@
 #include "utf_bool.h"
 #include "utf_byteorder.h"
 #include "utf_char.h"
+#include "utf_chrconv.h"
 #include "utf_error.h"
 #include "utf_fio.h"
 #include "utf_lang.h"

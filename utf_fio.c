@@ -19,8 +19,11 @@ static void utf_file_decompose_encoding_(utf_file *stream,
                                          utf_file_encoding enc);
 static void utf_file_process_bom_(utf_file *stream, utf_file_mode mode);
 static utf_bool utf_file_try_swap_endian_(utf_file *stream);
-static void utf_fread_bom_(utf_file *stream);
-static void utf_fwrite_bom_(utf_file *stream);
+
+static void utf_code_point_copy_(const utf_c32 *UTF_RESTRICT src,
+                                       utf_c32 *UTF_RESTRICT dst);
+static void utf_8_chr_copy_(const utf_c8 *UTF_RESTRICT src,
+                                  utf_c8 *UTF_RESTRICT dst);
 
 static size_t utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
                                   utf_c8 *UTF_RESTRICT c);
@@ -94,12 +97,6 @@ utf_error utf_ferror(const utf_file *stream)
     return stream->state;
 }
 
-static void utf_code_point_copy_(const utf_c32 *UTF_RESTRICT src,
-                                       utf_c32 *UTF_RESTRICT dst)
-{
-    memcpy(dst, src, 4);
-}
-
 utf_c32 utf_fgetc(utf_file *stream)
 {
     typedef utf_bool (*fread_next_ptr)(utf_file *, void *);
@@ -166,12 +163,6 @@ utf_c32 utf_fputc(utf_file *stream, utf_c32 code)
 
     fputc_table[stream->encoding](stream, code);
     return code;
-}
-
-static void utf_8_chr_copy_(const utf_c8 *UTF_RESTRICT src,
-                            utf_c8 *UTF_RESTRICT dst)
-{
-    memcpy(dst, src, utf_8_length_from_lead(*src));
 }
 
 size_t utf_fread(utf_file *UTF_RESTRICT stream,
@@ -351,18 +342,16 @@ static void utf_file_process_bom_(utf_file *stream, utf_file_mode mode)
     }
 }
 
-/* Now these two following functions are unused */
-static void utf_fread_bom_(utf_file *stream)
+static void utf_code_point_copy_(const utf_c32 *UTF_RESTRICT src,
+                                       utf_c32 *UTF_RESTRICT dst)
 {
-    if (utf_fgetc(stream) == 0xFEFF)
-        return;
-
-    rewind(stream->file);
+    memcpy(dst, src, 4);
 }
 
-static void utf_fwrite_bom_(utf_file *stream)
+static void utf_8_chr_copy_(const utf_c8 *UTF_RESTRICT src,
+                                  utf_c8 *UTF_RESTRICT dst)
 {
-    utf_fputc(stream, 0xFEFF);
+    memcpy(dst, src, utf_8_length_from_lead(*src));
 }
 
 static size_t utf_8_fread_next_(utf_file *UTF_RESTRICT stream,
